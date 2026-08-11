@@ -3,7 +3,7 @@ from flask import Blueprint, render_template, redirect, url_for, flash, request,
 from flask_login import login_required, current_user
 from app import db
 from app.models import User, Carrera, Asignatura, EspacioFisico, BloqueHorario, Profesor, DIAS_SEMANA, MODALIDADES, TIPOS_CLASE
-from app.rules import auditar_sistema_completo, validar_bloque_nuevo, calcular_minimo_sincronico, obtener_ids_bloques_en_conflicto
+from app.rules import auditar_sistema_completo, validar_bloque_nuevo, calcular_minimo_sincronico, obtener_ids_bloques_en_conflicto, obtener_mapa_explicacion_conflictos
 
 main_bp = Blueprint('main', __name__)
 
