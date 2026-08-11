@@ -3,7 +3,7 @@
 ![Python Version](https://img.shields.io/badge/Python-3.12-blue.svg)
 ![Framework](https://img.shields.io/badge/Framework-Flask-emerald.svg)
 ![Status](https://img.shields.io/badge/Status-v1.0.0%20Ready-success.svg)
-![License](https://img.shields.io/badge/License-MIT-informational.svg)
+![License](https://img.shields.io/badge/License-GPLv3-blue.svg)
 
 Sistema web de administración, planificación de horarios y gestión de espacios físicos (laboratorios de informática y aulas) desarrollado para el Centro Universitario Regional Zona Atlántica (**CURZA**) de la **Universidad Nacional del Comahue (UNComa)**.
 
@@ -142,6 +142,7 @@ SistemaHorarios/
 │       └── ci-cd.yml          # GitHub Actions CI/CD pipeline
 ├── Containerfile             # Multi-stage build Podman/Docker
 ├── requirements.txt          # Dependencias de Python
+├── LICENSE                   # Licencia GNU General Public License v3.0 (GPLv3)
 ├── MANUAL_DE_USO.md          # Manual de Usuario detallado
 ├── README.md                 # Documentación principal del proyecto
 └── run.py                    # Punto de entrada de la aplicación
@@ -150,4 +151,5 @@ SistemaHorarios/
 ---
 
 ## 📜 Licencia
-Este proyecto es software libre desarrollado para el **CURZA - Universidad Nacional del Comahue**.
+Este proyecto es Software Libre distribuido bajo los términos de la **[GNU General Public License v3.0 (GPLv3)](LICENSE)**.
+Desarrollado para el **CURZA — Universidad Nacional del Comahue**.
