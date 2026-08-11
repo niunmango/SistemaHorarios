@@ -33,7 +33,7 @@ def create_app(test_config=None):
     login_manager.init_app(app)
     login_manager.login_view = 'auth.login'
     login_manager.login_message = 'Por favor inicie sesión para acceder a esta página.'
-    login_manager.login_message_category = 'warning'
+    login_message_category = 'warning'
 
     oauth.init_app(app)
     if app.config.get('OAUTH_CLIENT_ID'):
@@ -71,3 +71,6 @@ def create_app(test_config=None):
                 pass
 
     return app
+
+# Exponer instancia por defecto para servidores WSGI que ejecutan 'gunicorn app:app'
+app = create_app()
