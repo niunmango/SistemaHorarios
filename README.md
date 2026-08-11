@@ -81,19 +81,51 @@ python3 tests/test_rules_unittest.py
 
 ---
 
-## 🐳 Despliegue con Podman / Docker
+## 🦭 Guía Completa de Despliegue con Podman
 
-El proyecto incluye un `Containerfile` optimizado para entornos de producción.
+El proyecto cuenta con un `Containerfile` multi-etapa optimizado para entornos de producción con **Podman** sin necesidad de permisos de superusuario (rootless).
 
-### Compilar la imagen:
+### 1. Construir la imagen del contenedor
 ```bash
 podman build -t sistema-horarios-curzas -f Containerfile .
 ```
 
-### Ejecutar el contenedor:
+### 2. Inicializar la base de datos con los datos oficiales de cursada
 ```bash
-podman run -d -p 5000:5000 --name horarios_app sistema-horarios-curzas
+podman run --rm -v ./instance:/app/instance:Z sistema-horarios-curzas python3 -c "from app import create_app; from app.seed import seed_database; app = create_app(); app.app_context().push(); seed_database()"
 ```
+
+### 3. Ejecutar el contenedor en segundo plano (Modo Detached)
+```bash
+podman run -d \
+  --name sistema_horarios_app \
+  -p 5000:5000 \
+  -v ./instance:/app/instance:Z \
+  --restart always \
+  sistema-horarios-curzas
+```
+
+### 4. Verificar el estado del servicio y consultar registros
+```bash
+# Verificar que el contenedor esté en ejecución
+podman ps
+
+# Inspeccionar los logs del servidor
+podman logs -f sistema_horarios_app
+```
+
+### 5. Comandos útiles de gestión
+```bash
+# Detener el contenedor
+podman stop sistema_horarios_app
+
+# Reiniciar el contenedor
+podman start sistema_horarios_app
+
+# Eliminar el contenedor
+podman rm -f sistema_horarios_app
+```
+Acceda desde cualquier equipo de la red a `http://<ip-servidor>:5000`
 
 ---
 
