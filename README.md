@@ -1,9 +1,9 @@
 # 📅 Sistema de Gestión de Horarios y Aulas — CURZA UNComa
 
-[![CI Build & Test Pipeline](https://github.com/ramiro-uncoma/SistemaHorarios/actions/workflows/ci-cd.yml/badge.svg)](https://github.com/ramiro-uncoma/SistemaHorarios/actions/workflows/ci-cd.yml)
-![Python Version](https://img.shields.io/badge/python-3.12-blue.svg)
-![Framework](https://img.shields.io/badge/framework-Flask-emerald.svg)
-![License](https://img.shields.io/badge/license-MIT-informational.svg)
+![Python Version](https://img.shields.io/badge/Python-3.12-blue.svg)
+![Framework](https://img.shields.io/badge/Framework-Flask-emerald.svg)
+![Status](https://img.shields.io/badge/Status-v1.0.0%20Ready-success.svg)
+![License](https://img.shields.io/badge/License-MIT-informational.svg)
 
 Sistema web de administración, planificación de horarios y gestión de espacios físicos (laboratorios de informática y aulas) desarrollado para el Centro Universitario Regional Zona Atlántica (**CURZA**) de la **Universidad Nacional del Comahue (UNComa)**.
 
@@ -40,7 +40,7 @@ Diseñado específicamente para las carreras:
 - **Frontend**: HTML5, Tailwind CSS, FontAwesome 6, JavaScript Vanilla.
 - **Testing**: Suite nativa de `unittest` con 100% de éxito en verificación de reglas.
 - **Contenedores**: Archivo `Containerfile` multi-etapa compatible con Podman y Docker.
-- **CI/CD**: GitHub Actions Pipeline para compilación y ejecución automatizada de tests en cada commit.
+- **CI/CD**: GitHub Actions Pipeline en `.github/workflows/ci-cd.yml`.
 
 ---
 
