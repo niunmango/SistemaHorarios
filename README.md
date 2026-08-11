@@ -2,6 +2,7 @@
 
 ![Python Version](https://img.shields.io/badge/Python-3.12-blue.svg)
 ![Framework](https://img.shields.io/badge/Framework-Flask-emerald.svg)
+![Authentication](https://img.shields.io/badge/Auth-OAuth%202.0%20%2B%20Local-indigo.svg)
 ![Status](https://img.shields.io/badge/Status-v1.0.0%20Ready-success.svg)
 ![License](https://img.shields.io/badge/License-GPLv3-blue.svg)
 
@@ -24,10 +25,13 @@ Diseñado específicamente para las carreras:
    - **Detección de Conflictos de Aula**: Alerta inmediata ante solapamientos de aulas o laboratorios físicos.
    - **Detección de Conflictos Docentes**: Bloquea el intento de asignar al mismo profesor a dos clases sincrónicas en simultáneo.
    - **Módulo de Bloqueos Externos**: Permite reservar aulas para materias de Exactas o eventos sin alterar las métricas sincrónicas de las tecnicaturas.
-3. **Roles Docentes Flexibles (1 PAD + Múltiples AYPs por Cátedra)**:
+3. **Autenticación Doble (OAuth 2.0 + Credenciales Locales)**:
+   - Integración nativa con **OAuth 2.0 (Google / Institucional UNComa)** para login directo con cuentas de correo oficial.
+   - Auto-vinculación automática de cuentas OAuth con la entidad de `Profesor` mediante coincidencia de email.
+4. **Roles Docentes Flexibles (1 PAD + Múltiples AYPs por Cátedra)**:
    - Permite definir **1 único Profesor Adjunto (PAD)** a cargo de la teoría y **múltiples Ayudantes de Primera (AYP)** para comisiones de práctica y talleres.
    - Reubicación autogestionada de horarios por el propio profesor sobre sus materias asignadas.
-4. **Consulta Pública para Alumnos (Sin Login)**:
+5. **Consulta Pública para Alumnos (Sin Login)**:
    - Acceso de solo lectura para que los estudiantes consulten y filtren horarios por carrera, cuatrimestre, profesor o aula.
    - **Modo de Impresión Ecológico**: Hoja de estilo `@media print` en blanco y negro puro sobre fondo blanco sin consumo excesivo de tóner.
 
@@ -35,7 +39,7 @@ Diseñado específicamente para las carreras:
 
 ## 🛠️ Tecnología e Infraestructura
 
-- **Backend**: Python 3.12, Flask, Flask-SQLAlchemy 3.1, Flask-Login, Werkzeug.
+- **Backend**: Python 3.12, Flask, Flask-SQLAlchemy 3.1, Flask-Login, Authlib (OAuth 2.0), Werkzeug.
 - **Base de Datos**: SQLite3 / PostgreSQL compatible (ORM SQLAlchemy 2.0).
 - **Frontend**: HTML5, Tailwind CSS, FontAwesome 6, JavaScript Vanilla.
 - **Testing**: Suite nativa de `unittest` con 100% de éxito en verificación de reglas.
@@ -55,16 +59,22 @@ cd SistemaHorarios
 python3 -m venv venv
 source venv/bin/activate
 
-# Instalar dependencias
+# Instalar dependencias (incluye Authlib para OAuth 2.0)
 pip install -r requirements.txt
 ```
 
-### 2. Poblar la base de datos con planes oficiales
+### 2. Configurar Variables de Entorno para OAuth 2.0 (Opcional)
+```bash
+export OAUTH_CLIENT_ID="tu-google-client-id.apps.googleusercontent.com"
+export OAUTH_CLIENT_SECRET="tu-google-client-secret"
+```
+
+### 3. Poblar la base de datos con planes oficiales
 ```bash
 python3 -c "from app import create_app; from app.seed import seed_database; app = create_app(); app.app_context().push(); seed_database()"
 ```
 
-### 3. Iniciar el servidor de desarrollo
+### 4. Iniciar el servidor de desarrollo
 ```bash
 python3 run.py
 ```
@@ -95,37 +105,23 @@ podman build -t sistema-horarios-curzas -f Containerfile .
 podman run --rm -v ./instance:/app/instance:Z sistema-horarios-curzas python3 -c "from app import create_app; from app.seed import seed_database; app = create_app(); app.app_context().push(); seed_database()"
 ```
 
-### 3. Ejecutar el contenedor en segundo plano (Modo Detached)
+### 3. Ejecutar el contenedor en segundo plano (Modo Detached) con variables OAuth 2.0
 ```bash
 podman run -d \
   --name sistema_horarios_app \
   -p 5000:5000 \
   -v ./instance:/app/instance:Z \
+  -e OAUTH_CLIENT_ID="tu-client-id" \
+  -e OAUTH_CLIENT_SECRET="tu-client-secret" \
   --restart always \
   sistema-horarios-curzas
 ```
 
 ### 4. Verificar el estado del servicio y consultar registros
 ```bash
-# Verificar que el contenedor esté en ejecución
 podman ps
-
-# Inspeccionar los logs del servidor
 podman logs -f sistema_horarios_app
 ```
-
-### 5. Comandos útiles de gestión
-```bash
-# Detener el contenedor
-podman stop sistema_horarios_app
-
-# Reiniciar el contenedor
-podman start sistema_horarios_app
-
-# Eliminar el contenedor
-podman rm -f sistema_horarios_app
-```
-Acceda desde cualquier equipo de la red a `http://<ip-servidor>:5000`
 
 ---
 
@@ -134,6 +130,7 @@ Acceda desde cualquier equipo de la red a `http://<ip-servidor>:5000`
 | Usuario | Contraseña | Rol | Acceso / Permisos |
 | :--- | :--- | :--- | :--- |
 | *(Sin login)* | *(Sin login)* | Público / Alumno | Consulta de grilla, filtros e impresión. |
+| `OAuth 2.0` | *(Google / Provider)* | Docente / Alumno | Autenticación con email institucional. |
 | `alumno` | `alumno123` | Alumno | Consulta de horarios y materias. |
 | `docente` | `docente123` | Profesor | Reubicación autogestionada de sus clases. |
 | `gestor` | `gestor123` | Gestor de Aulas | ABM de clases, materias y bloqueos. |
@@ -146,11 +143,11 @@ Acceda desde cualquier equipo de la red a `http://<ip-servidor>:5000`
 ```text
 SistemaHorarios/
 ├── app/
-│   ├── __init__.py           # App Factory y configuración Flask/SQLAlchemy
+│   ├── __init__.py           # App Factory, SQLAlchemy y Authlib OAuth 2.0
 │   ├── models.py             # Modelos User, Profesor, Carrera, Asignatura, EspacioFisico, BloqueHorario
 │   ├── rules.py              # Motor de validación (>50% sync, solapamiento aulas y docentes)
 │   ├── seed.py               # Puebla los planes de estudio TUASSL, TUDW y docentes
-│   ├── auth.py               # Rutas de autenticación (Login / Logout)
+│   ├── auth.py               # Rutas de autenticación (Login local + OAuth 2.0 Google/Institucional)
 │   ├── routes.py             # Rutas principales (Horarios, Materias, Profesores, Usuarios, APIs)
 │   ├── static/
 │   │   └── favicon.png       # Icono oficial de la aplicación
@@ -173,7 +170,7 @@ SistemaHorarios/
 │   └── workflows/
 │       └── ci-cd.yml          # GitHub Actions CI/CD pipeline
 ├── Containerfile             # Multi-stage build Podman/Docker
-├── requirements.txt          # Dependencias de Python
+├── requirements.txt          # Dependencias de Python (Authlib, Flask, etc.)
 ├── LICENSE                   # Licencia GNU General Public License v3.0 (GPLv3)
 ├── MANUAL_DE_USO.md          # Manual de Usuario detallado
 ├── README.md                 # Documentación principal del proyecto
