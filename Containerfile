@@ -1,5 +1,5 @@
 # Stage 1: Build & Environment
-FROM python:3.11-slim AS builder
+FROM python:3.12-slim AS builder
 
 WORKDIR /app
 ENV PYTHONDONTWRITEBYTECODE=1 \
@@ -13,7 +13,7 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir --user -r requirements.txt
 
 # Stage 2: Final Runtime Image
-FROM python:3.11-slim
+FROM python:3.12-slim
 WORKDIR /app
 
 ENV PATH=/root/.local/bin:$PATH \
@@ -25,4 +25,4 @@ COPY . .
 
 EXPOSE 5000
 
-CMD ["gunicorn", "--workers", "4", "--bind", "0.0.0.0:5000", "run:app"]
+CMD ["sh", "-c", "python3 -c 'from app import create_app; from app.seed import seed_database; app = create_app(); app.app_context().push(); seed_database()' && gunicorn --workers 2 --bind 0.0.0.0:${PORT:-5000} 'run:app'"]
