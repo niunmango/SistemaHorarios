@@ -58,7 +58,7 @@
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-700/60 text-sm">
-                    {% for asig in asignaturas %}
+                    {% for asig in materias or asignaturas %}
                     <tr class="hover:bg-slate-700/30 transition-colors">
                         
                         <td class="py-3.5 px-4">
@@ -123,15 +123,23 @@
 
                         {% if current_user.is_gestor %}
                         <td class="py-3.5 px-4 text-right space-x-2">
-                            <a href="{{ url_for('main.nuevo_bloque', asignatura_id=asig.id) }}" class="text-xs text-blue-400 hover:text-blue-300 font-semibold" title="Agregar horario de clase">
-                                <i class="fa-solid fa-calendar-plus"></i> +Clase
+                            <a href="{{ url_for('main.materia_clases', id=asig.id) }}" class="px-2.5 py-1 bg-blue-600/20 hover:bg-blue-600 text-blue-300 hover:text-white font-semibold text-xs rounded-lg border border-blue-500/30 inline-flex items-center gap-1.5 transition-all" title="Ver, editar o agregar clases a esta materia">
+                                <i class="fa-solid fa-calendar-days"></i> Editar Clases <span class="px-1.5 py-0.2 bg-blue-950 text-blue-200 rounded-full font-mono text-[10px]">{{ asig.bloques_horarios|length }}</span>
                             </a>
-                            <a href="{{ url_for('main.editar_materia', id=asig.id) }}" class="text-xs text-slate-400 hover:text-slate-200 font-semibold" title="Editar materia">
+                            <a href="{{ url_for('main.editar_materia', id=asig.id) }}" class="text-xs text-slate-400 hover:text-slate-200 font-semibold p-1 hover:bg-slate-700/50 rounded" title="Editar datos asignatura">
                                 <i class="fa-solid fa-pen-to-square"></i>
                             </a>
                         </td>
                         {% endif %}
 
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="{% if current_user.is_gestor %}9{% else %}8{% endif %}" class="py-12 text-center text-slate-400">
+                            <i class="fa-solid fa-book-open text-4xl mb-3 text-slate-600 block"></i>
+                            <p class="font-medium text-base text-slate-300">No se encontraron materias</p>
+                            <p class="text-xs text-slate-500 mt-1">Pruebe seleccionar otro filtro o crear una materia nueva.</p>
+                        </td>
                     </tr>
                     {% endfor %}
                 </tbody>

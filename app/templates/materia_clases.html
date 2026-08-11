@@ -1,0 +1,179 @@
+{% extends "base.html" %}
+
+{% block title %}Gestionar Clases - {{ materia.nombre }}{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+
+    <!-- Header Section -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-4">
+        <div>
+            <div class="inline-flex items-center space-x-2 px-3 py-1 bg-blue-500/10 border border-blue-500/20 rounded-full text-xs font-semibold text-blue-400 mb-2">
+                <span>{{ materia.carrera.codigo }} ({{ materia.anio_cursada }}° Año — {{ materia.cuatrimestre }}° Cuatrimestre)</span>
+            </div>
+            <h1 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">{{ materia.nombre }}</h1>
+            <p class="text-slate-400 text-sm mt-1">
+                Profesor/a PAD: <strong class="text-slate-200">{{ materia.nombre_pad }}</strong>
+                {% if materia.nombres_ayps_lista %} | AYP: <span class="text-slate-300">{{ materia.nombres_ayps_lista | join(', ') }}</span>{% endif %}
+            </p>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-2">
+            <a href="{{ url_for('main.materias') }}" class="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-xs rounded-xl border border-slate-700 flex items-center gap-2 transition-all">
+                <i class="fa-solid fa-arrow-left"></i> Volver a Materias
+            </a>
+            
+            {% if current_user.is_gestor %}
+            <a href="{{ url_for('main.editar_materia', id=materia.id) }}" class="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-xs rounded-xl border border-slate-700 flex items-center gap-2 transition-all">
+                <i class="fa-solid fa-pen-to-square"></i> Editar Asignatura
+            </a>
+
+            <a href="{{ url_for('main.nuevo_bloque', asignatura_id=materia.id) }}" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs rounded-xl shadow-lg shadow-blue-600/30 flex items-center gap-2 transition-all">
+                <i class="fa-solid fa-plus"></i> + Programar Nueva Clase
+            </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Summary Metrics -->
+    <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
+        <div class="bg-slate-800/80 border border-slate-700/80 rounded-2xl p-4 shadow-lg">
+            <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Carga Horaria Semanal</p>
+            <h3 class="text-2xl font-bold text-white mt-1">{{ materia.carga_horaria_semanal }} hs/sem</h3>
+        </div>
+
+        <div class="bg-slate-800/80 border border-slate-700/80 rounded-2xl p-4 shadow-lg">
+            <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Mínimo Sincrónico (>50%)</p>
+            <h3 class="text-2xl font-bold text-blue-400 mt-1">&ge; {{ materia.min_horas_sincronicas }} hs</h3>
+        </div>
+
+        <div class="bg-slate-800/80 border border-slate-700/80 rounded-2xl p-4 shadow-lg">
+            <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Programado Sincrónico</p>
+            <h3 class="text-2xl font-bold text-slate-100 mt-1">{{ materia.total_horas_sincronicas_programadas }} hs</h3>
+        </div>
+
+        <div class="bg-slate-800/80 border border-slate-700/80 rounded-2xl p-4 shadow-lg flex flex-col justify-center">
+            <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Estado de Regla</p>
+            {% if materia.cumple_regla_sincronica %}
+            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 w-max">
+                <i class="fa-solid fa-circle-check mr-1.5"></i> Cumple Regla (>50%)
+            </span>
+            {% else %}
+            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30 w-max">
+                <i class="fa-solid fa-triangle-exclamation mr-1.5"></i> Falta {{ materia.min_horas_sincronicas - materia.total_horas_sincronicas_programadas }}h Sincrónicas
+            </span>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Table of Preloaded Classes / Blocks -->
+    <div class="bg-slate-800 rounded-2xl border border-slate-700/80 shadow-xl overflow-hidden">
+        <div class="px-5 py-4 border-b border-slate-700 flex items-center justify-between">
+            <h3 class="text-base font-bold text-white flex items-center gap-2">
+                <i class="fa-solid fa-list-check text-blue-400"></i> Clases Programadas Actualmente ({{ bloques|length }})
+            </h3>
+            {% if current_user.is_gestor %}
+            <a href="{{ url_for('main.nuevo_bloque', asignatura_id=materia.id) }}" class="text-xs text-blue-400 hover:text-blue-300 font-semibold flex items-center gap-1">
+                <i class="fa-solid fa-calendar-plus"></i> + Crear Clase
+            </a>
+            {% endif %}
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse min-w-[700px]">
+                <thead>
+                    <tr class="bg-slate-900/90 text-slate-400 text-xs uppercase tracking-wider border-b border-slate-700">
+                        <th class="py-3.5 px-4 font-bold">Día y Horario (24hs)</th>
+                        <th class="py-3.5 px-4 font-bold">Modalidad / Tipo</th>
+                        <th class="py-3.5 px-4 font-bold">Espacio Físico / Aula</th>
+                        <th class="py-3.5 px-4 font-bold">Docente Asignado</th>
+                        <th class="py-3.5 px-4 font-bold text-center">Duración</th>
+                        {% if current_user.is_gestor %}
+                        <th class="py-3.5 px-4 font-bold text-right">Acciones</th>
+                        {% endif %}
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-700/60 text-sm">
+                    {% for b in bloques %}
+                    <tr class="hover:bg-slate-700/30 transition-colors">
+                        
+                        <td class="py-3.5 px-4">
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-bold bg-slate-900 border border-slate-700 text-blue-300">
+                                {{ b.dia_nombre }}
+                            </span>
+                            <span class="font-mono text-sm font-bold text-white block mt-1">
+                                {{ b.hora_inicio.strftime('%H:%M') }} - {{ b.hora_fin.strftime('%H:%M') }} hs
+                            </span>
+                        </td>
+
+                        <td class="py-3.5 px-4">
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-semibold 
+                                {% if b.modalidad == 'Presencial' %}bg-emerald-950 text-emerald-300 border border-emerald-500/30
+                                {% elif b.modalidad == 'Virtual' %}bg-blue-950 text-blue-300 border border-blue-500/30
+                                {% elif b.modalidad == 'Híbrido' %}bg-purple-950 text-purple-300 border border-purple-500/30
+                                {% else %}bg-amber-950 text-amber-300 border border-amber-500/30{% endif %}">
+                                {{ b.modalidad }} ({{ b.tipo }})
+                            </span>
+                        </td>
+
+                        <td class="py-3.5 px-4 font-semibold text-slate-200">
+                            {% if b.espacio_fisico %}
+                            <span class="text-emerald-300 flex items-center gap-1.5">
+                                <i class="fa-solid fa-location-dot text-emerald-400"></i> {{ b.espacio_fisico.nombre }}
+                            </span>
+                            {% else %}
+                            <span class="text-slate-400 italic text-xs">Sin aula física / Virtual</span>
+                            {% endif %}
+                        </td>
+
+                        <td class="py-3.5 px-4 text-xs">
+                            {% if b.profesor %}
+                            <div class="flex items-center space-x-1.5">
+                                <span class="px-1.5 py-0.5 rounded bg-indigo-950 text-indigo-300 border border-indigo-500/30 font-mono font-bold text-[10px]">{{ b.rol_docente }}</span>
+                                <span class="text-white font-medium">{{ b.profesor.nombre_completo }}</span>
+                            </div>
+                            {% else %}
+                            <span class="text-slate-500 italic">Sin docente especificado</span>
+                            {% endif %}
+                        </td>
+
+                        <td class="py-3.5 px-4 text-center font-mono font-bold text-slate-300">
+                            {{ b.duracion_horas }} hs
+                        </td>
+
+                        {% if current_user.is_gestor %}
+                        <td class="py-3.5 px-4 text-right space-x-3">
+                            <a href="{{ url_for('main.editar_bloque', id=b.id) }}" class="px-2.5 py-1 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs rounded-lg shadow inline-flex items-center gap-1 transition-all" title="Editar clase">
+                                <i class="fa-solid fa-pen-to-square"></i> Editar
+                            </a>
+
+                            <form method="POST" action="{{ url_for('main.eliminar_bloque', id=b.id) }}" class="inline" onsubmit="return confirm('¿Está seguro de eliminar esta clase de {{ materia.nombre }}?');">
+                                <button type="submit" class="px-2.5 py-1 bg-rose-600/20 hover:bg-rose-600 text-rose-300 hover:text-white font-bold text-xs rounded-lg border border-rose-500/30 inline-flex items-center gap-1 transition-all" title="Eliminar clase">
+                                    <i class="fa-solid fa-trash-can"></i> Eliminar
+                                </button>
+                            </form>
+                        </td>
+                        {% endif %}
+
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="{% if current_user.is_gestor %}6{% else %}5{% endif %}" class="py-12 text-center text-slate-400">
+                            <i class="fa-solid fa-calendar-xmark text-4xl mb-3 text-slate-600 block"></i>
+                            <p class="font-medium text-base text-slate-300">Esta asignatura aún no tiene clases programadas</p>
+                            <p class="text-xs text-slate-500 mt-1 mb-4">Haga clic en el botón a continuación para crear el primer bloque horario.</p>
+                            {% if current_user.is_gestor %}
+                            <a href="{{ url_for('main.nuevo_bloque', asignatura_id=materia.id) }}" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs rounded-xl shadow-lg inline-flex items-center gap-1.5 transition-all">
+                                <i class="fa-solid fa-plus"></i> Programar Primera Clase
+                            </a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

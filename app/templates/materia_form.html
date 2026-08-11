@@ -117,10 +117,71 @@
 
             </div>
 
-            <div class="flex items-center space-x-2 pt-2">
-                <input type="checkbox" id="es_externa" name="es_externa" {% if materia and materia.es_externa %}checked{% endif %} class="rounded bg-slate-900 border-slate-700 text-blue-600 focus:ring-blue-500">
-                <label for="es_externa" class="text-sm font-medium text-slate-300">Es una materia externa (Bloqueo de Aula Externa)</label>
+            <!-- CLASES PROGRAMADAS PRECARGADAS DE ESTA MATERIA -->
+            {% if materia %}
+            <div class="pt-6 border-t border-slate-700/80 space-y-3">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                            <i class="fa-solid fa-calendar-days text-blue-400"></i> Clases / Horarios Programados ({{ materia.bloques_horarios|length }})
+                        </h3>
+                        <p class="text-xs text-slate-400 mt-0.5">Clases asociadas a esta asignatura precargadas para edición, borrado o creación</p>
+                    </div>
+                    <a href="{{ url_for('main.nuevo_bloque', asignatura_id=materia.id) }}" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs rounded-xl shadow transition-all flex items-center gap-1.5">
+                        <i class="fa-solid fa-plus"></i> + Crear Clase
+                    </a>
+                </div>
+
+                {% if materia.bloques_horarios %}
+                <div class="bg-slate-900 border border-slate-700/80 rounded-xl overflow-hidden shadow">
+                    <table class="w-full text-left text-xs border-collapse">
+                        <thead>
+                            <tr class="bg-slate-950 text-slate-400 uppercase tracking-wider border-b border-slate-800">
+                                <th class="py-2.5 px-3">Día y Horario (24hs)</th>
+                                <th class="py-2.5 px-3">Modalidad / Tipo</th>
+                                <th class="py-2.5 px-3">Aula</th>
+                                <th class="py-2.5 px-3">Docente</th>
+                                <th class="py-2.5 px-3 text-right">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-800">
+                            {% for b in materia.bloques_horarios|sort(attribute='dia_semana') %}
+                            <tr class="hover:bg-slate-800/50 transition-colors">
+                                <td class="py-2.5 px-3 font-semibold text-white">
+                                    {{ b.dia_nombre }}
+                                    <span class="font-mono text-blue-300 block font-normal text-[11px]">{{ b.hora_inicio.strftime('%H:%M') }} - {{ b.hora_fin.strftime('%H:%M') }} hs</span>
+                                </td>
+                                <td class="py-2.5 px-3 text-slate-300">
+                                    {{ b.modalidad }} ({{ b.tipo }})
+                                </td>
+                                <td class="py-2.5 px-3 text-emerald-300 font-medium">
+                                    {{ b.espacio_fisico.nombre if b.espacio_fisico else 'Sin aula / Virtual' }}
+                                </td>
+                                <td class="py-2.5 px-3 text-slate-300">
+                                    {% if b.profesor %}{{ b.profesor.nombre_completo }} <span class="font-mono text-[10px] text-indigo-300">[{{ b.rol_docente }}]</span>{% else %}Sin especificar{% endif %}
+                                </td>
+                                <td class="py-2.5 px-3 text-right space-x-2">
+                                    <a href="{{ url_for('main.editar_bloque', id=b.id) }}" class="text-blue-400 hover:text-blue-300 font-semibold" title="Editar clase">
+                                        <i class="fa-solid fa-pen-to-square"></i> Editar
+                                    </a>
+                                    <form method="POST" action="{{ url_for('main.eliminar_bloque', id=b.id) }}" class="inline" onsubmit="return confirm('¿Eliminar esta clase?');">
+                                        <button type="submit" class="text-rose-400 hover:text-rose-300 font-semibold" title="Eliminar clase">
+                                            <i class="fa-solid fa-trash-can"></i> Borrar
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="p-4 bg-slate-900 border border-slate-700/80 rounded-xl text-center text-slate-400 text-xs">
+                    No hay clases programadas aún para esta materia. <a href="{{ url_for('main.nuevo_bloque', asignatura_id=materia.id) }}" class="text-blue-400 hover:underline font-semibold ml-1">+ Crear primera clase</a>
+                </div>
+                {% endif %}
             </div>
+            {% endif %}
 
             <div class="flex items-center justify-between pt-4 border-t border-slate-700">
                 <a href="{{ url_for('main.materias') }}" class="px-4 py-2.5 text-slate-400 hover:text-white text-sm font-semibold">Cancelar</a>

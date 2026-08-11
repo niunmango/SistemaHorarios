@@ -159,6 +159,7 @@ SistemaHorarios/
 │       ├── horarios.html     # Grilla semanal interactiva con Drag & Drop y Popovers
 │       ├── materias.html
 │       ├── materia_form.html
+│       ├── materia_clases.html    # Gestión de clases precargadas por asignatura
 │       ├── profesores.html
 │       ├── profesor_form.html
 │       ├── bloque_form.html

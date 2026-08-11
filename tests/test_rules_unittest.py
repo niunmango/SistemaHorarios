@@ -83,6 +83,55 @@ class TestSistemaHorariosRules(unittest.TestCase):
         self.assertGreater(reporte['total_asignaturas'], 10)
         self.assertGreater(reporte['cumplen_sincronico'], 0)
 
+    def test_materias_route_lists_subjects(self):
+        seed_database()
+        user = User(username='testgestor', email='gestor@test.com', role='admin', nombre_completo='Test Gestor')
+        user.set_password('test')
+        db.session.add(user)
+        db.session.commit()
+
+        client = self.app.test_client()
+        client.post('/login', data={'username': 'testgestor', 'password': 'test'})
+        res = client.get('/materias')
+        self.assertEqual(res.status_code, 200)
+        self.assertIn('Planes de Estudio y Cátedras', res.get_data(as_text=True))
+        # Verify that seeded subjects like "Introducción a la Programación" are in the response
+        self.assertIn('Introducción a la Programación', res.get_data(as_text=True))
+
+
+    def test_editar_bloque_route(self):
+        seed_database()
+        user = User(username='testgestor', email='gestor@test.com', role='admin', nombre_completo='Test Gestor')
+        user.set_password('test')
+        db.session.add(user)
+        db.session.commit()
+
+        bloque = BloqueHorario.query.first()
+        self.assertIsNotNone(bloque)
+
+        client = self.app.test_client()
+        client.post('/login', data={'username': 'testgestor', 'password': 'test'})
+        res = client.get(f'/bloques/{bloque.id}/editar')
+        self.assertEqual(res.status_code, 200)
+        self.assertIn('Editar Clase / Reserva', res.get_data(as_text=True))
+
+
+    def test_materia_clases_route(self):
+        seed_database()
+        user = User(username='testgestor', email='gestor@test.com', role='admin', nombre_completo='Test Gestor')
+        user.set_password('test')
+        db.session.add(user)
+        db.session.commit()
+
+        asig = Asignatura.query.first()
+        self.assertIsNotNone(asig)
+
+        client = self.app.test_client()
+        client.post('/login', data={'username': 'testgestor', 'password': 'test'})
+        res = client.get(f'/materias/{asig.id}/clases')
+        self.assertEqual(res.status_code, 200)
+        self.assertIn('Clases Programadas Actualmente', res.get_data(as_text=True))
+
 
 if __name__ == '__main__':
     unittest.main()

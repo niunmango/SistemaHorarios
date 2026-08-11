@@ -104,9 +104,17 @@ Para que el botón **`Google / UNComa`** aparezca activo en la pantalla de inici
 Para las carreras TUASSL y TUDW, la normativa exige que la carga semanal sincrónica $H_{sinc}$ cumpla:
 $$H_{sinc} \ge \left\lfloor \frac{H_{total}}{2} \right\rfloor + 1$$
 
-- **Visualización**: En la tabla `/materias`, el sistema muestra el estado de cumplimiento de cada materia mediante distintivos de color:
+- **Visualización y Control**: En la tabla `/materias`, el sistema muestra el estado de cumplimiento de cada materia mediante distintivos de color:
   - 🟢 **Cumple (>50%)**: La materia ya tiene programadas las horas sincrónicas requeridas.
   - 🟡 **Falta Xh sinc.**: La asignatura aún no alcanza la cuota mínima sincrónica exigida.
+
+- **Gestión Centralizada de Clases Precargadas (`Editar Clases`)**:
+  - En la columna de acciones de la tabla `/materias`, cada asignatura cuenta con la opción **`Editar Clases`** (mostrando la cantidad de clases programadas).
+  - Al ingresar, el sistema precarga el listado completo de clases asignadas a dicha materia, permitiendo:
+    - **Editar**: Modificar el día, horario (24hs), modalidad, aula o docente de una clase existente.
+    - **Borrar**: Eliminar un bloque horario programado.
+    - **+ Crear Clase**: Programar una nueva clase para la asignatura preseleccionada.
+  - Asimismo, al editar la información general de la asignatura (`/materias/<id>/editar`), el sistema precarga al pie del formulario el listado de clases existentes con las mismas opciones de edición y borrado.
 
 ---
 

@@ -257,6 +257,7 @@ def materias():
 
     return render_template('materias.html',
                            materias=lista_materias,
+                           asignaturas=lista_materias,
                            carreras=carreras,
                            carrera_id=carrera_id,
                            cuatrimestre=cuatrimestre,
@@ -343,6 +344,18 @@ def editar_materia(id):
     return render_template('materia_form.html', carreras=carreras, profesores=profesores, materia=asig)
 
 
+@main_bp.route('/materias/<int:id>/clases')
+@login_required
+def materia_clases(id):
+    asig = db.session.get(Asignatura, id)
+    if not asig:
+        flash('Materia no encontrada.', 'danger')
+        return redirect(url_for('main.materias'))
+
+    bloques = BloqueHorario.query.filter_by(asignatura_id=asig.id).order_by(BloqueHorario.dia_semana, BloqueHorario.hora_inicio).all()
+    return render_template('materia_clases.html', materia=asig, bloques=bloques)
+
+
 @main_bp.route('/bloques/nuevo', methods=['GET', 'POST'])
 @login_required
 def nuevo_bloque():
@@ -368,7 +381,7 @@ def nuevo_bloque():
 
         if not asignatura_id or dia_semana is None or not hora_inicio_str or not hora_fin_str:
             flash('Por favor complete todos los campos obligatorios del horario.', 'warning')
-            return render_template('bloque_form.html', asignaturas=asignaturas, profesores=profesores, aulas=aulas, bloque=None, DIAS_SEMANA=DIAS_SEMANA, MODALIDADES=MODALIDADES, TIPOS_CLASE=TIPOS_CLASE)
+            return render_template('bloque_form.html', asignaturas=asignaturas, profesores=profesores, aulas=aulas, bloque=None, dias_semana=DIAS_SEMANA, modalidades=MODALIDADES, tipos_clase=TIPOS_CLASE, DIAS_SEMANA=DIAS_SEMANA, MODALIDADES=MODALIDADES, TIPOS_CLASE=TIPOS_CLASE)
 
         h_ini = time.fromisoformat(hora_inicio_str)
         h_fin = time.fromisoformat(hora_fin_str)
@@ -380,7 +393,7 @@ def nuevo_bloque():
         if not valido:
             for err in errores:
                 flash(err, 'danger')
-            return render_template('bloque_form.html', asignaturas=asignaturas, profesores=profesores, aulas=aulas, bloque=None, DIAS_SEMANA=DIAS_SEMANA, MODALIDADES=MODALIDADES, TIPOS_CLASE=TIPOS_CLASE)
+            return render_template('bloque_form.html', asignaturas=asignaturas, profesores=profesores, aulas=aulas, bloque=None, dias_semana=DIAS_SEMANA, modalidades=MODALIDADES, tipos_clase=TIPOS_CLASE, DIAS_SEMANA=DIAS_SEMANA, MODALIDADES=MODALIDADES, TIPOS_CLASE=TIPOS_CLASE)
 
         for adv in advertencias:
             flash(adv, 'warning')
@@ -411,7 +424,7 @@ def nuevo_bloque():
         flash('Clase / Reserva programada con éxito.', 'success')
         return redirect(url_for('main.horarios'))
 
-    return render_template('bloque_form.html', asignaturas=asignaturas, profesores=profesores, aulas=aulas, bloque=None, DIAS_SEMANA=DIAS_SEMANA, MODALIDADES=MODALIDADES, TIPOS_CLASE=TIPOS_CLASE)
+    return render_template('bloque_form.html', asignaturas=asignaturas, profesores=profesores, aulas=aulas, bloque=None, dias_semana=DIAS_SEMANA, modalidades=MODALIDADES, tipos_clase=TIPOS_CLASE, DIAS_SEMANA=DIAS_SEMANA, MODALIDADES=MODALIDADES, TIPOS_CLASE=TIPOS_CLASE)
 
 
 @main_bp.route('/bloques/<int:id>/editar', methods=['GET', 'POST'])
@@ -452,7 +465,7 @@ def editar_bloque(id):
         if not valido:
             for err in errores:
                 flash(err, 'danger')
-            return render_template('bloque_form.html', asignaturas=asignaturas, profesores=profesores, aulas=aulas, bloque=bloque, DIAS_SEMANA=DIAS_SEMANA, MODALIDADES=MODALIDADES, TIPOS_CLASE=TIPOS_CLASE)
+            return render_template('bloque_form.html', asignaturas=asignaturas, profesores=profesores, aulas=aulas, bloque=bloque, dias_semana=DIAS_SEMANA, modalidades=MODALIDADES, tipos_clase=TIPOS_CLASE, DIAS_SEMANA=DIAS_SEMANA, MODALIDADES=MODALIDADES, TIPOS_CLASE=TIPOS_CLASE)
 
         for adv in advertencias:
             flash(adv, 'warning')
@@ -475,7 +488,7 @@ def editar_bloque(id):
         flash('Clase / Reserva reubicada con éxito.', 'success')
         return redirect(url_for('main.horarios'))
 
-    return render_template('bloque_form.html', asignaturas=asignaturas, profesores=profesores, aulas=aulas, bloque=bloque, DIAS_SEMANA=DIAS_SEMANA, MODALIDADES=MODALIDADES, TIPOS_CLASE=TIPOS_CLASE)
+    return render_template('bloque_form.html', asignaturas=asignaturas, profesores=profesores, aulas=aulas, bloque=bloque, dias_semana=DIAS_SEMANA, modalidades=MODALIDADES, tipos_clase=TIPOS_CLASE, DIAS_SEMANA=DIAS_SEMANA, MODALIDADES=MODALIDADES, TIPOS_CLASE=TIPOS_CLASE)
 
 
 @main_bp.route('/bloques/<int:id>/eliminar', methods=['POST'])
