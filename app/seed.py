@@ -11,29 +11,29 @@ def seed_database():
     print("🌱 Inicializando datos base del CURZAS (Profesores 1er y 2do Cuatri, TUASSL, TUDW, Aulas)...")
 
     # 1. Plantel Docente Completo
-    p_ramiro = Profesor(nombre_completo='Ramiro García Poggi', categoria_habitual='PAD', email='ramiro.garcia@fi.uncoma.edu.ar')
-    p_fabian = Profesor(nombre_completo='Néstor Fabián Imberti', categoria_habitual='PAD', email='fabian.imberti@fi.uncoma.edu.ar')
-    p_carolina = Profesor(nombre_completo='Carolina Juárez', categoria_habitual='PAD', email='carolina.juarez@fi.uncoma.edu.ar')
-    p_manuel = Profesor(nombre_completo='Manuel Jove López', categoria_habitual='AYP', email='manuel.jove@fi.uncoma.edu.ar')
-    p_lucas = Profesor(nombre_completo='Lucas Linquiman', categoria_habitual='AYP', email='lucas.linquiman@fi.uncoma.edu.ar')
-    p_corujo = Profesor(nombre_completo='Enrique Corujo', categoria_habitual='PAD', email='enrique.corujo@fi.uncoma.edu.ar')
-    p_guerra = Profesor(nombre_completo='Eduardo Guerra', categoria_habitual='PAD', email='eduardo.guerra@fi.uncoma.edu.ar')
-    p_meloni = Profesor(nombre_completo='César Meloni', categoria_habitual='PAD', email='cesar.meloni@fi.uncoma.edu.ar')
-    p_fede = Profesor(nombre_completo='Federico Blicharski', categoria_habitual='AYP', email='federico.b@fi.uncoma.edu.ar')
-    p_daher = Profesor(nombre_completo='Prof. Daher', categoria_habitual='PAD', email='daher@fi.uncoma.edu.ar')
+    p_ramiro = Profesor(nombre_completo='Ramiro García Poggi', categoria_habitual='PAD', email='ramiro.garcia@curza.com.ar')
+    p_fabian = Profesor(nombre_completo='Néstor Fabián Imberti', categoria_habitual='PAD', email='fabian.imberti@curza.com.ar')
+    p_carolina = Profesor(nombre_completo='Carolina Juárez', categoria_habitual='PAD', email='carolina.juarez@curza.com.ar')
+    p_manuel = Profesor(nombre_completo='Manuel Jove López', categoria_habitual='AYP', email='manuel.jove@curza.com.ar')
+    p_lucas = Profesor(nombre_completo='Lucas Linquiman', categoria_habitual='AYP', email='lucas.linquiman@curza.com.ar')
+    p_corujo = Profesor(nombre_completo='Enrique Corujo', categoria_habitual='PAD', email='enrique.corujo@curza.com.ar')
+    p_guerra = Profesor(nombre_completo='Eduardo Guerra', categoria_habitual='PAD', email='eduardo.guerra@curza.com.ar')
+    p_meloni = Profesor(nombre_completo='César Meloni', categoria_habitual='PAD', email='cesar.meloni@curza.com.ar')
+    p_fede = Profesor(nombre_completo='Federico Blicharski', categoria_habitual='AYP', email='federico.b@curza.com.ar')
+    p_daher = Profesor(nombre_completo='Prof. Daher', categoria_habitual='PAD', email='daher@curza.com.ar')
 
     # Docentes del 1er Cuatrimestre
-    p_nadia = Profesor(nombre_completo='Nadia Riquelme', categoria_habitual='AYP', email='nadia.riquelme@fi.uncoma.edu.ar')
-    p_karina = Profesor(nombre_completo='Karina Carrión', categoria_habitual='AYP', email='karina.carrion@fi.uncoma.edu.ar')
-    p_enzo = Profesor(nombre_completo='Enzo Catrin', categoria_habitual='AYP', email='enzo.catrin@fi.uncoma.edu.ar')
-    p_rosbaco = Profesor(nombre_completo='Nicolás Rosbaco', categoria_habitual='PAD', email='nicolas.rosbaco@fi.uncoma.edu.ar')
-    p_paula = Profesor(nombre_completo='Paula Suarez', categoria_habitual='AYP', email='paula.suarez@fi.uncoma.edu.ar')
-    p_lucas_m = Profesor(nombre_completo='Lucas Molina', categoria_habitual='AYP', email='lucas.molina@fi.uncoma.edu.ar')
-    p_romina = Profesor(nombre_completo='Romina Cariaga', categoria_habitual='PAD', email='romina.cariaga@fi.uncoma.edu.ar')
-    p_soledad = Profesor(nombre_completo='Soledad', categoria_habitual='AYP', email='soledad@fi.uncoma.edu.ar')
-    p_eugenia = Profesor(nombre_completo='Eugenia Alonso', categoria_habitual='PAD', email='eugenia.alonso@fi.uncoma.edu.ar')
-    p_mileva = Profesor(nombre_completo='Mileva Honcharuk', categoria_habitual='AYP', email='mileva.h@fi.uncoma.edu.ar')
-    p_cecilia = Profesor(nombre_completo='Cecilia Camera', categoria_habitual='PAD', email='cecilia.camera@fi.uncoma.edu.ar')
+    p_nadia = Profesor(nombre_completo='Nadia Riquelme', categoria_habitual='AYP', email='nadia.riquelme@curza.com.ar')
+    p_karina = Profesor(nombre_completo='Karina Carrión', categoria_habitual='AYP', email='karina.carrion@curza.com.ar')
+    p_enzo = Profesor(nombre_completo='Enzo Catrin', categoria_habitual='AYP', email='enzo.catrin@curza.com.ar')
+    p_rosbaco = Profesor(nombre_completo='Nicolás Rosbaco', categoria_habitual='PAD', email='nicolas.rosbaco@curza.com.ar')
+    p_paula = Profesor(nombre_completo='Paula Suarez', categoria_habitual='AYP', email='paula.suarez@curza.com.ar')
+    p_lucas_m = Profesor(nombre_completo='Lucas Molina', categoria_habitual='AYP', email='lucas.molina@curza.com.ar')
+    p_romina = Profesor(nombre_completo='Romina Cariaga', categoria_habitual='PAD', email='romina.cariaga@curza.com.ar')
+    p_soledad = Profesor(nombre_completo='Soledad', categoria_habitual='AYP', email='soledad@curza.com.ar')
+    p_eugenia = Profesor(nombre_completo='Eugenia Alonso', categoria_habitual='PAD', email='eugenia.alonso@curza.com.ar')
+    p_mileva = Profesor(nombre_completo='Mileva Honcharuk', categoria_habitual='AYP', email='mileva.h@curza.com.ar')
+    p_cecilia = Profesor(nombre_completo='Cecilia Camera', categoria_habitual='PAD', email='cecilia.camera@curza.com.ar')
 
     db.session.add_all([
         p_ramiro, p_fabian, p_carolina, p_manuel, p_lucas, p_corujo, p_guerra, p_meloni, p_fede, p_daher,
@@ -42,16 +42,16 @@ def seed_database():
     db.session.commit()
 
     # 2. Usuarios Base (con vinculación docente)
-    admin = User(username='admin', email='admin@fi.uncoma.edu.ar', nombre_completo='Administrador del Sistema', role='admin')
+    admin = User(username='admin', email='admin@curza.com.ar', nombre_completo='Administrador del Sistema', role='admin')
     admin.set_password('admin123')
 
-    gestor = User(username='gestor', email='gestor@fi.uncoma.edu.ar', nombre_completo='Coordinador de Horarios CURZAS', role='gestor_aulas')
+    gestor = User(username='gestor', email='gestor.aulas@curza.com.ar', nombre_completo='Gestor de Aulas CURZAS', role='gestor')
     gestor.set_password('gestor123')
 
-    docente = User(username='docente', email='docente@fi.uncoma.edu.ar', nombre_completo='Ramiro García Poggi', role='docente', profesor=p_ramiro)
+    docente = User(username='docente', email='ramiro.garcia@curza.com.ar', nombre_completo='Prof. Ramiro García Poggi', role='docente', profesor=p_ramiro)
     docente.set_password('docente123')
 
-    alumno = User(username='alumno', email='alumno@fi.uncoma.edu.ar', nombre_completo='Estudiante UNComa', role='alumno')
+    alumno = User(username='alumno', email='alumno@curza.com.ar', nombre_completo='Estudiante Universitario', role='alumno')
     alumno.set_password('alumno123')
 
     db.session.add_all([admin, gestor, docente, alumno])

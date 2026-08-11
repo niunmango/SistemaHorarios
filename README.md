@@ -3,7 +3,7 @@
 ![Python Version](https://img.shields.io/badge/Python-3.12-blue.svg)
 ![Framework](https://img.shields.io/badge/Framework-Flask-emerald.svg)
 ![UI Feature](https://img.shields.io/badge/UI-Drag%20%26%20Drop%20Calendar-purple.svg)
-![Authentication](https://img.shields.io/badge/Auth-OAuth%202.0%20%2B%20Local-indigo.svg)
+![Authentication](https://img.shields.io/badge/Auth-OAuth%202.0%20%40curza.com.ar-indigo.svg)
 ![Status](https://img.shields.io/badge/Status-v1.0.0%20Ready-success.svg)
 ![License](https://img.shields.io/badge/License-GPLv3-blue.svg)
 
@@ -26,16 +26,34 @@ Diseñado específicamente para las carreras:
    - **Regla del >50% Sincrónico**: Verifica que cada materia cumpla $H_{sinc} \ge \lfloor H_{total}/2 \rfloor + 1$ horas semanales presenciales o por videoconferencia.
    - **Detección de Conflictos de Aula**: Alerta inmediata ante solapamientos de aulas o laboratorios físicos en el mismo cuatrimestre.
    - **Detección de Conflictos Docentes**: Bloquea el intento de asignar al mismo profesor a dos clases sincrónicas en simultáneo.
-   - **Módulo de Bloqueos Externos**: Permite reservar aulas para materias de Exactas o eventos sin alterar las métricas sincrónicas de las tecnicaturas.
-3. **Autenticación Doble (OAuth 2.0 + Credenciales Locales)**:
-   - Integración nativa con **OAuth 2.0 (Google / Institucional UNComa)** para login directo con cuentas de correo oficial.
-   - Auto-vinculación automática de cuentas OAuth con la entidad de `Profesor` mediante coincidencia de email.
+   - **Detección de Conflictos de Cohorte**: Advierte la superposición de materias del mismo año y carrera.
+3. **Autenticación Institucional OAuth 2.0 (`@curza.com.ar`)**:
+   - Integración nativa con **OAuth 2.0 (Google / Institucional UNComa `@curza.com.ar`)**.
+   - Auto-vinculación automática de cuentas de correo institucional con la entidad del `Profesor` mediante coincidencia de email.
 4. **Roles Docentes Flexibles (1 PAD + Múltiples AYPs por Cátedra)**:
    - Permite definir **1 único Profesor Adjunto (PAD)** a cargo de la teoría y **múltiples Ayudantes de Primera (AYP)** para comisiones de práctica y talleres.
    - Reubicación autogestionada de horarios por el propio profesor sobre sus materias asignadas.
 5. **Consulta Pública para Alumnos (Sin Login)**:
    - Acceso de solo lectura para que los estudiantes consulten y filtren horarios por carrera, cuatrimestre, profesor o aula.
    - **Modo de Impresión Ecológico**: Hoja de estilo `@media print` en blanco y negro puro sobre fondo blanco sin consumo excesivo de tóner.
+
+---
+
+## 🔐 Configuración de OAuth 2.0 (Google / Dominio `@curza.com.ar`)
+
+Por defecto, la interfaz del sistema permite ingresar con usuario y contraseña local. Para **activar el botón de inicio de sesión institucional con Google / OAuth 2.0**:
+
+1. Vaya a la [Consola de Google Cloud Credentials](https://console.cloud.google.com/apis/credentials).
+2. Cree una credencial de **ID de cliente de OAuth 2.0** de tipo *Aplicación web*.
+3. En **URIs de redireccionamiento autorizados**, agregue la dirección de su servidor:
+   - **Desarrollo local**: `http://localhost:5000/auth/callback`
+   - **Despliegue en Render**: `https://tu-app-curzas.onrender.com/auth/callback`
+4. Configure las dos variables de entorno en su servidor o archivo de entorno (Render / Docker / Linux):
+   ```bash
+   export OAUTH_CLIENT_ID="xxxxxxxxx-xxxxxxxxxx.apps.googleusercontent.com"
+   export OAUTH_CLIENT_SECRET="GOCSPX-xxxxxxxxxxxxxxxxxxxx"
+   ```
+5. Una vez configuradas las variables, el botón **`Google / UNComa (@curza.com.ar)`** se activará automáticamente en el formulario de inicio de sesión (`/login`).
 
 ---
 
@@ -65,18 +83,7 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-### 2. Configurar Variables de Entorno para OAuth 2.0 (Opcional)
-```bash
-export OAUTH_CLIENT_ID="tu-google-client-id.apps.googleusercontent.com"
-export OAUTH_CLIENT_SECRET="tu-google-client-secret"
-```
-
-### 3. Poblar la base de datos con planes oficiales
-```bash
-python3 -c "from app import create_app; from app.seed import seed_database; app = create_app(); app.app_context().push(); seed_database()"
-```
-
-### 4. Iniciar el servidor de desarrollo
+### 2. Iniciar el servidor de desarrollo
 ```bash
 python3 run.py
 ```
@@ -93,50 +100,42 @@ python3 tests/test_rules_unittest.py
 
 ---
 
-## 🦭 Guía Completa de Despliegue con Podman
+## 🦭 Guía Completa de Despliegue en Render.com o Podman
 
-El proyecto cuenta con un `Containerfile` multi-etapa optimizado para entornos de producción con **Podman** sin necesidad de permisos de superusuario (rootless).
+### Despliegue en Render.com
+1. Cree un servicio **Web Service** conectado a su repositorio de GitHub.
+2. Render utilizará automáticamente el `Containerfile` e iniciará la aplicación con Gunicorn.
+3. En la pestaña **Environment Variables** de Render, agregue (opcional):
+   - `OAUTH_CLIENT_ID`: Su ID de cliente de Google OAuth.
+   - `OAUTH_CLIENT_SECRET`: Su Secreto de cliente de Google OAuth.
 
-### 1. Construir la imagen del contenedor
+### Despliegue local con Podman / Docker
 ```bash
+# Construir imagen
 podman build -t sistema-horarios-curzas -f Containerfile .
-```
 
-### 2. Inicializar la base de datos con los datos oficiales de cursada
-```bash
-podman run --rm -v ./instance:/app/instance:Z sistema-horarios-curzas python3 -c "from app import create_app; from app.seed import seed_database; app = create_app(); app.app_context().push(); seed_database()"
-```
-
-### 3. Ejecutar el contenedor en segundo plano (Modo Detached) con variables OAuth 2.0
-```bash
+# Ejecutar contenedor
 podman run -d \
   --name sistema_horarios_app \
   -p 5000:5000 \
   -v ./instance:/app/instance:Z \
   -e OAUTH_CLIENT_ID="tu-client-id" \
   -e OAUTH_CLIENT_SECRET="tu-client-secret" \
-  --restart always \
   sistema-horarios-curzas
-```
-
-### 4. Verificar el estado del servicio y consultar registros
-```bash
-podman ps
-podman logs -f sistema_horarios_app
 ```
 
 ---
 
-## 🔐 Cuentas de Demostración
+## 🔑 Cuentas Locales de Demostración
 
-| Usuario | Contraseña | Rol | Acceso / Permisos |
-| :--- | :--- | :--- | :--- |
-| *(Sin login)* | *(Sin login)* | Público / Alumno | Consulta de grilla, filtros e impresión. |
-| `OAuth 2.0` | *(Google / Provider)* | Docente / Alumno | Autenticación con email institucional. |
-| `alumno` | `alumno123` | Alumno | Consulta de horarios y materias. |
-| `docente` | `docente123` | Profesor | Reubicación autogestionada Drag & Drop. |
-| `gestor` | `gestor123` | Gestor de Aulas | ABM de clases, materias y bloqueos. |
-| `admin` | `admin123` | Administrador | Control total + ABM de usuarios y plantel docente. |
+| Usuario | Correo Institucional | Contraseña | Rol | Acceso / Permisos |
+| :--- | :--- | :--- | :--- | :--- |
+| *(Sin login)* | *(Sin login)* | *(Sin login)* | Público / Alumno | Consulta de grilla, filtros e impresión. |
+| `OAuth 2.0` | `usuario@curza.com.ar` | *(Google Auth)* | Docente / Alumno | Autenticación con correo institucional `@curza.com.ar`. |
+| `alumno` | `alumno@curza.com.ar` | `alumno123` | Alumno | Consulta de horarios y materias. |
+| `docente` | `ramiro.garcia@curza.com.ar` | `docente123` | Profesor | Reubicación autogestionada Drag & Drop. |
+| `gestor` | `gestor.aulas@curza.com.ar` | `gestor123` | Gestor de Aulas | ABM de clases, materias y bloqueos. |
+| `admin` | `admin@curza.com.ar` | `admin123` | Administrador | Control total + ABM de usuarios y plantel docente. |
 
 ---
 
@@ -147,8 +146,8 @@ SistemaHorarios/
 ├── app/
 │   ├── __init__.py           # App Factory, SQLAlchemy y Authlib OAuth 2.0
 │   ├── models.py             # Modelos User, Profesor, Carrera, Asignatura, EspacioFisico, BloqueHorario
-│   ├── rules.py              # Motor de validación (>50% sync, solapamiento aulas y docentes por cuatri)
-│   ├── seed.py               # Puebla los planes de estudio 1er y 2do cuatri TUASSL, TUDW y docentes
+│   ├── rules.py              # Motor de validación (>50% sync, solapamiento aulas, docentes y cohortes)
+│   ├── seed.py               # Puebla los planes de estudio 1er y 2do cuatri TUASSL, TUDW y docentes (@curza.com.ar)
 │   ├── auth.py               # Rutas de autenticación (Login local + OAuth 2.0 Google/Institucional)
 │   ├── routes.py             # Rutas principales (Horarios, Materias, Profesores, Usuarios, API Drag & Drop)
 │   ├── static/

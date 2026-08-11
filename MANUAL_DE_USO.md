@@ -11,17 +11,42 @@ El **Sistema de Gestión de Horarios y Aulas** es una aplicación web desarrolla
 
 ---
 
-## 🔑 2. Perfiles de Usuario y Credenciales de Demostración
+## 🔑 2. Perfiles de Usuario, Credenciales e Inicio con OAuth 2.0
 
-El sistema admite 4 niveles de permisos diferenciados:
+### 2.1. Cuentas Locales de Demostración
 
-| Rol / Perfil | Nombre de Usuario | Contraseña | Descripción de Permisos |
-| :--- | :--- | :--- | :--- |
-| **Público / Alumnos** | *(Sin login)* | *(Sin login)* | **Consulta pública de solo lectura**. Acceso libre a la grilla semanal, filtros y exportación/impresión en PDF. |
-| **Alumno Autenticado** | `alumno` | `alumno123` | Consulta de horarios y aulas de cursada. |
-| **Profesor / Docente** | `docente` | `docente123` | Consulta y **reubicación interactiva Drag & Drop de sus propias clases asignadas** (siempre que el cambio no genere colisiones). |
-| **Gestor de Aulas** | `gestor` | `gestor123` | Control completo de materias, reservas de aulas, bloqueos externos y creación de horarios. |
-| **Administrador** | `admin` | `admin123` | **Acceso total**, incluyendo Alta, Edición y Baja de Usuarios y Docentes. |
+| Rol / Perfil | Nombre de Usuario | Correo Institucional | Contraseña | Descripción de Permisos |
+| :--- | :--- | :--- | :--- | :--- |
+| **Público / Alumnos** | *(Sin login)* | *(Sin login)* | *(Sin login)* | **Consulta pública de solo lectura**. Acceso libre a la grilla semanal, filtros y exportación/impresión en PDF. |
+| **Alumno Autenticado** | `alumno` | `alumno@curza.com.ar` | `alumno123` | Consulta de horarios y aulas de cursada. |
+| **Profesor / Docente** | `docente` | `ramiro.garcia@curza.com.ar` | `docente123` | Consulta y **reubicación interactiva Drag & Drop de sus propias clases asignadas**. |
+| **Gestor de Aulas** | `gestor` | `gestor.aulas@curza.com.ar` | `gestor123` | Control completo de materias, reservas de aulas, bloqueos externos y creación de horarios. |
+| **Administrador** | `admin` | `admin@curza.com.ar` | `admin123` | **Acceso total**, incluyendo Alta, Edición y Baja de Usuarios y Docentes. |
+
+---
+
+### 2.2. Autenticación Institucional OAuth 2.0 (`@curza.com.ar`)
+
+El sistema cuenta con integración nativa para **Inicio de Sesión Unificado con Google / OAuth 2.0** utilizando la cuenta institucional (`@curza.com.ar` o `@fi.uncoma.edu.ar`).
+
+#### ¿Cómo Habilitar el Botón de OAuth 2.0 en Producción?
+Para que el botón **`Google / UNComa`** aparezca activo en la pantalla de inicio de sesión (`/login`):
+
+1. **Crear Credenciales de OAuth 2.0 en Google Cloud / Workspace**:
+   - Vaya a la [Consola de Google Cloud](https://console.cloud.google.com/apis/credentials).
+   - Cree un nuevo proyecto o seleccione el proyecto de la universidad.
+   - En **Pantalla de Consentimiento de OAuth**, configure el dominio institucional `curza.com.ar`.
+   - En **Credenciales** $\rightarrow$ **ID de cliente de OAuth 2.0** $\rightarrow$ **Aplicación web**, agregue las URIs de redireccionamiento autorizadas:
+     - **Para desarrollo local**: `http://localhost:5000/auth/callback`
+     - **Para Render / Servidor**: `https://tu-app.onrender.com/auth/callback`
+
+2. **Configurar Variables de Entorno en el Servidor (Render / Docker)**:
+   Agregue las siguientes dos variables de entorno:
+   - `OAUTH_CLIENT_ID`: `xxxxxx-xxxxxx.apps.googleusercontent.com`
+   - `OAUTH_CLIENT_SECRET`: `GOCSPX-xxxxxxxxxxxxxx`
+
+3. **Auto-vinculación de Cuentas de Docentes**:
+   - Cuando un profesor inicia sesión con su correo institucional (`ej: ramiro.garcia@curza.com.ar`), el sistema reconoce automáticamente la cuenta, la vincula al plantel docente y le otorga permisos de edición sobre sus clases correspondientes.
 
 ---
 
@@ -44,7 +69,7 @@ El sistema admite 4 niveles de permisos diferenciados:
      - Horario exacto y duración total en horas.
      - Docente a cargo e indicación de su rol (**PAD** para Teoría o **AYP** para Práctica).
      - Aula asignada y observaciones pedagógicas.
-     - En caso de solapamiento, **explicación detallada del conflicto** (aula o docente afectado).
+     - En caso de solapamiento, **explicación detallada del conflicto** (aula, docente o cohorte afectada).
 
 4. **Impresión Ecológica / Exportación a PDF**:
    - Haga clic en el botón **`🖨️ Imprimir / PDF`** o presione `Ctrl + P`.
@@ -54,7 +79,7 @@ El sistema admite 4 niveles de permisos diferenciados:
 
 ## 🖐️ 4. Guía de Uso: Reubicación Interactiva Drag & Drop (Docentes y Gestores)
 
-1. Inicie sesión con su usuario docente (ej: `docente`) o gestor (`gestor`).
+1. Inicie sesión con su usuario docente (ej: `docente`) o mediante Google OAuth con su correo `@curza.com.ar`.
 2. En la grilla semanal (`/horarios`), haga clic sobre el bloque de la clase que desea reubicar y **arrástrelo directamente hacia el nuevo día y horario deseado** (estilo Google Calendar).
 3. **Validación Anticonflicto Instantánea**:
    - Si la nueva celda de destino está libre, la clase se moverá inmediatamente y el sistema confirmará con un aviso verde.
@@ -82,7 +107,6 @@ $$H_{sinc} \ge \left\lfloor \frac{H_{total}}{2} \right\rfloor + 1$$
 - **Visualización**: En la tabla `/materias`, el sistema muestra el estado de cumplimiento de cada materia mediante distintivos de color:
   - 🟢 **Cumple (>50%)**: La materia ya tiene programadas las horas sincrónicas requeridas.
   - 🟡 **Falta Xh sinc.**: La asignatura aún no alcanza la cuota mínima sincrónica exigida.
-- **Asignación de Cátedra**: Cada materia permite asociar **1 único Profesor Adjunto (PAD)** a cargo de la Teoría y **múltiples Ayudantes de Primera (AYPs)** a cargo de las comisiones de práctica.
 
 ---
 
