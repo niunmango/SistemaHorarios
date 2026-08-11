@@ -25,4 +25,4 @@ COPY . .
 
 EXPOSE 5000
 
-CMD ["sh", "-c", "python3 -c 'from app import create_app; from app.seed import seed_database; app = create_app(); app.app_context().push(); seed_database()' && gunicorn --workers 2 --bind 0.0.0.0:${PORT:-5000} 'run:app'"]
+CMD ["sh", "-c", "python3 -c 'from app import create_app; app = create_app()' && gunicorn --workers 2 --bind 0.0.0.0:${PORT:-5000} 'run:app'"]

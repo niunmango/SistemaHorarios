@@ -55,10 +55,16 @@ def create_app(test_config=None):
     app.register_blueprint(main_bp)
 
     with app.app_context():
-        db.create_all()
-        # Poblado automático si la base de datos está vacía (ideal para Render, Gunicorn y Docker)
-        if not app.config.get('TESTING') and User.query.count() == 0:
-            from app.seed import seed_database
-            seed_database()
+        try:
+            db.create_all()
+        except Exception:
+            pass
+
+        try:
+            if not app.config.get('TESTING') and User.query.count() == 0:
+                from app.seed import seed_database
+                seed_database()
+        except Exception:
+            pass
 
     return app
