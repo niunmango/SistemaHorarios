@@ -47,8 +47,8 @@ Por defecto, la interfaz del sistema permite ingresar con usuario y contraseña 
 2. Cree una credencial de **ID de cliente de OAuth 2.0** de tipo *Aplicación web*.
 3. En **URIs de redireccionamiento autorizados**, agregue la dirección de su servidor:
    - **Desarrollo local**: `http://localhost:5000/auth/callback`
-   - **Despliegue en Render**: `https://tu-app-curzas.onrender.com/auth/callback`
-4. Configure las dos variables de entorno en su servidor o archivo de entorno (Render / Docker / Linux):
+   - **Servidor / Producción**: `https://tu-dominio-curza.edu.ar/auth/callback`
+4. Configure las dos variables de entorno en su servidor o archivo de entorno (Podman / Docker / Linux):
    ```bash
    export OAUTH_CLIENT_ID="xxxxxxxxx-xxxxxxxxxx.apps.googleusercontent.com"
    export OAUTH_CLIENT_SECRET="GOCSPX-xxxxxxxxxxxxxxxxxxxx"
@@ -151,13 +151,6 @@ Los valores por defecto se pueden sobrescribir exportando variables en el entorn
 | `OAUTH_CLIENT_SECRET` | Secreto de cliente de Google OAuth 2.0 | *(vacío)* |
 
 > **Importante**: antes de desplegar en producción cambie `SECRET_KEY`, `MARIADB_PASSWORD` y `MARIADB_ROOT_PASSWORD`.
-
-### Despliegue en Render.com
-1. Cree un servicio **Web Service** conectado a su repositorio de GitHub.
-2. Render utilizará automáticamente el `Containerfile` e iniciará la aplicación con Gunicorn.
-3. En la pestaña **Environment Variables** agregue al menos:
-   - `DATABASE_URL`: la cadena de conexión a un **MariaDB/MySQL externo**, por ejemplo `mysql+pymysql://usuario:clave@host:3306/sistema_horarios?charset=utf8mb4`.
-   - `SECRET_KEY`, `OAUTH_CLIENT_ID` y `OAUTH_CLIENT_SECRET` (opcional).
 
 ---
 

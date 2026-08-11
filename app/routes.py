@@ -1,6 +1,7 @@
-from datetime import datetime, time
+from datetime import datetime, time, timezone
 from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify
 from flask_login import login_required, current_user
+from sqlalchemy.exc import IntegrityError
 from app import db
 from app.models import User, Carrera, Asignatura, EspacioFisico, BloqueHorario, Profesor, ConfiguracionSistema, DIAS_SEMANA, MODALIDADES, TIPOS_CLASE
 from app.rules import auditar_sistema_completo, validar_bloque_nuevo, calcular_minimo_sincronico, obtener_ids_bloques_en_conflicto, obtener_mapa_explicacion_conflictos
@@ -134,14 +135,16 @@ def api_mover_bloque(id):
     try:
         nuevo_dia = int(nuevo_dia)
         h_parts = [int(p) for p in nueva_hora_ini_str.split(':')]
+        if not (0 <= h_parts[0] <= 23 and 0 <= h_parts[1] <= 59):
+            return jsonify({'success': False, 'error': 'Hora de inicio no válida.'}), 400
         nueva_hora_ini = time(h_parts[0], h_parts[1])
         
         duracion_min = int(bloque.duracion_horas * 60)
         fin_min = (h_parts[0] * 60 + h_parts[1]) + duracion_min
         fin_h = fin_min // 60
         fin_m = fin_min % 60
-        if fin_h >= 24:
-            return jsonify({'success': False, 'error': 'La clase excede el horario del día.'}), 400
+        if fin_h >= 24 or fin_m >= 60:
+            return jsonify({'success': False, 'error': 'La clase excede el horario permitido del día.'}), 400
         nueva_hora_fin = time(fin_h, fin_m)
 
     except Exception as e:
@@ -433,8 +436,12 @@ def nuevo_bloque():
             flash('Por favor complete todos los campos obligatorios del horario.', 'warning')
             return render_template('bloque_form.html', asignaturas=asignaturas, profesores=profesores, aulas=aulas, bloque=None, dias_semana=DIAS_SEMANA, modalidades=MODALIDADES, tipos_clase=TIPOS_CLASE, DIAS_SEMANA=DIAS_SEMANA, MODALIDADES=MODALIDADES, TIPOS_CLASE=TIPOS_CLASE)
 
-        h_ini = time.fromisoformat(hora_inicio_str)
-        h_fin = time.fromisoformat(hora_fin_str)
+        try:
+            h_ini = time.fromisoformat(hora_inicio_str)
+            h_fin = time.fromisoformat(hora_fin_str)
+        except (ValueError, TypeError):
+            flash('Formato de hora no válido. Use HH:MM.', 'danger')
+            return render_template('bloque_form.html', asignaturas=asignaturas, profesores=profesores, aulas=aulas, bloque=None, dias_semana=DIAS_SEMANA, modalidades=MODALIDADES, tipos_clase=TIPOS_CLASE, DIAS_SEMANA=DIAS_SEMANA, MODALIDADES=MODALIDADES, TIPOS_CLASE=TIPOS_CLASE)
 
         valido, errores, advertencias = validar_bloque_nuevo(
             asignatura_id, dia_semana, h_ini, h_fin, modalidad, espacio_fisico_id, profesor_id
@@ -509,8 +516,12 @@ def editar_bloque(id):
         espacio_fisico_id = request.form.get('espacio_fisico_id', type=int) or None
         observaciones = request.form.get('observaciones', '').strip()
 
-        h_ini = time.fromisoformat(hora_inicio_str)
-        h_fin = time.fromisoformat(hora_fin_str)
+        try:
+            h_ini = time.fromisoformat(hora_inicio_str)
+            h_fin = time.fromisoformat(hora_fin_str)
+        except (ValueError, TypeError):
+            flash('Formato de hora no válido. Use HH:MM.', 'danger')
+            return render_template('bloque_form.html', asignaturas=asignaturas, profesores=profesores, aulas=aulas, bloque=bloque, dias_semana=DIAS_SEMANA, modalidades=MODALIDADES, tipos_clase=TIPOS_CLASE, DIAS_SEMANA=DIAS_SEMANA, MODALIDADES=MODALIDADES, TIPOS_CLASE=TIPOS_CLASE)
 
         valido, errores, advertencias = validar_bloque_nuevo(
             asignatura_id, dia_semana, h_ini, h_fin, modalidad, espacio_fisico_id, profesor_id, bloque_id_actual=bloque.id
@@ -615,6 +626,10 @@ def nuevo_usuario():
             flash('El nombre de usuario ya está registrado.', 'danger')
             return render_template('usuario_form.html', profesores=profesores, usuario=None)
 
+        if User.query.filter_by(email=email).first():
+            flash('El correo electrónico ya está registrado.', 'danger')
+            return render_template('usuario_form.html', profesores=profesores, usuario=None)
+
         usuario = User(
             username=username,
             email=email,
@@ -624,8 +639,13 @@ def nuevo_usuario():
         )
         usuario.set_password(password)
 
-        db.session.add(usuario)
-        db.session.commit()
+        try:
+            db.session.add(usuario)
+            db.session.commit()
+        except IntegrityError:
+            db.session.rollback()
+            flash('Error de integridad: el nombre de usuario o email ya está en uso.', 'danger')
+            return render_template('usuario_form.html', profesores=profesores, usuario=None)
 
         flash(f'Usuario "{username}" creado con éxito con rol [{role}].', 'success')
         return redirect(url_for('main.usuarios'))
@@ -648,8 +668,19 @@ def editar_usuario(id):
     profesores = Profesor.query.order_by(Profesor.nombre_completo).all()
 
     if request.method == 'POST':
-        usuario.username = request.form.get('username', '').strip()
-        usuario.email = request.form.get('email', '').strip()
+        new_username = request.form.get('username', '').strip()
+        new_email = request.form.get('email', '').strip()
+
+        if User.query.filter(User.username == new_username, User.id != usuario.id).first():
+            flash('El nombre de usuario ya está en uso por otro usuario.', 'danger')
+            return render_template('usuario_form.html', profesores=profesores, usuario=usuario)
+
+        if User.query.filter(User.email == new_email, User.id != usuario.id).first():
+            flash('El correo electrónico ya está en uso por otro usuario.', 'danger')
+            return render_template('usuario_form.html', profesores=profesores, usuario=usuario)
+
+        usuario.username = new_username
+        usuario.email = new_email
         usuario.nombre_completo = request.form.get('nombre_completo', '').strip()
         usuario.role = request.form.get('role', 'alumno')
         usuario.profesor_id = request.form.get('profesor_id', type=int) or None
@@ -658,7 +689,13 @@ def editar_usuario(id):
         if password:
             usuario.set_password(password)
 
-        db.session.commit()
+        try:
+            db.session.commit()
+        except IntegrityError:
+            db.session.rollback()
+            flash('Error al actualizar usuario: nombre de usuario o email duplicado.', 'danger')
+            return render_template('usuario_form.html', profesores=profesores, usuario=usuario)
+
         flash(f'Usuario "{usuario.username}" actualizado con éxito.', 'success')
         return redirect(url_for('main.usuarios'))
 
@@ -697,7 +734,7 @@ def congelar_sistema():
     config.congelado = True
     config.motivo_congelacion = motivo if motivo else 'Sin motivo especificado'
     config.congelado_por = current_user.id
-    config.congelado_fecha = datetime.utcnow()
+    config.congelado_fecha = datetime.now(timezone.utc)
     db.session.commit()
     
     flash('Sistema CONGELADO. No se permiten cambios hasta que un administrador lo descongele.', 'warning')

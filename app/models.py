@@ -1,8 +1,11 @@
 import math
-from datetime import datetime, time
+from datetime import datetime, time, timezone
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
 from app import db
+
+def utc_now():
+    return datetime.now(timezone.utc)
 
 class ConfiguracionSistema(db.Model):
     __tablename__ = 'configuracion_sistema'
@@ -12,7 +15,7 @@ class ConfiguracionSistema(db.Model):
     motivo_congelacion = db.Column(db.String(250), nullable=True)
     congelado_por = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
     congelado_fecha = db.Column(db.DateTime, nullable=True)
-    actualizado_fecha = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    actualizado_fecha = db.Column(db.DateTime, default=utc_now, onupdate=utc_now)
 
     @staticmethod
     def get_config():
@@ -42,7 +45,7 @@ class User(UserMixin, db.Model):
     profesor_id = db.Column(db.Integer, db.ForeignKey('profesores.id'), nullable=True)
     profesor = db.relationship('Profesor', backref='usuario_asociado', uselist=False)
 
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=utc_now)
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
@@ -56,11 +59,11 @@ class User(UserMixin, db.Model):
 
     @property
     def is_gestor(self):
-        return self.role in ['admin', 'gestor_aulas']
+        return self.role in ['admin', 'gestor_aulas', 'gestor']
 
     @property
     def is_docente(self):
-        return self.role in ['admin', 'gestor_aulas', 'docente']
+        return self.role in ['admin', 'gestor_aulas', 'gestor', 'docente']
 
     @property
     def is_alumno(self):

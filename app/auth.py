@@ -7,6 +7,15 @@ from app.models import User, Profesor
 
 auth_bp = Blueprint('auth', __name__)
 
+def is_safe_url(target):
+    if not target:
+        return False
+    ref_url = urlparse(request.host_url)
+    test_url = urlparse(target)
+    if test_url.scheme or test_url.netloc:
+        return test_url.scheme == ref_url.scheme and test_url.netloc == ref_url.netloc
+    return target.startswith('/') and not target.startswith('//') and not target.startswith('\\')
+
 @auth_bp.route('/login', methods=['GET', 'POST'])
 def login():
     if current_user.is_authenticated:
@@ -24,7 +33,7 @@ def login():
 
         login_user(user, remember=remember_me)
         next_page = request.args.get('next')
-        if not next_page or urlparse(next_page).netloc != '':
+        if not is_safe_url(next_page):
             next_page = url_for('main.horarios' if user.is_alumno else 'main.dashboard')
 
         flash(f'¡Bienvenido/a, {user.nombre_completo}!', 'success')
@@ -57,26 +66,35 @@ def auth_callback():
 
     try:
         token = oauth.google.authorize_access_token()
-        user_info = token.get('userinfo')
-        if not user_info:
+        user_info = token.get('userinfo') if token else None
+        if not user_info and token:
             user_info = oauth.google.userinfo()
     except Exception as e:
         flash(f'Error durante la autenticación OAuth 2.0: {str(e)}', 'danger')
         return redirect(url_for('auth.login'))
 
+    if not user_info:
+        flash('No se obtuvo información de usuario desde el proveedor OAuth 2.0.', 'danger')
+        return redirect(url_for('auth.login'))
+
     email = user_info.get('email')
-    nombre_completo = user_info.get('name') or email.split('@')[0]
-    
     if not email:
         flash('No se pudo obtener el correo electrónico desde el proveedor OAuth 2.0.', 'danger')
         return redirect(url_for('auth.login'))
+
+    nombre_completo = user_info.get('name') or email.split('@')[0]
 
     # Buscar usuario existente por email
     user = User.query.filter_by(email=email).first()
 
     if not user:
-        # Auto-registro mediante OAuth 2.0
-        username = email.split('@')[0]
+        # Auto-registro mediante OAuth 2.0 con sufijo si hay colisión de username
+        base_username = email.split('@')[0]
+        username = base_username
+        counter = 1
+        while User.query.filter_by(username=username).first():
+            username = f"{base_username}_{counter}"
+            counter += 1
         
         # Verificar si coincide con un profesor registrado
         prof = Profesor.query.filter_by(email=email).first()
@@ -117,7 +135,10 @@ def register():
         nombre_completo = request.form.get('nombre_completo', '').strip()
         password = request.form.get('password', '')
         confirm_password = request.form.get('confirm_password', '')
-        role = request.form.get('role', 'alumno')
+        
+        # Seguridad: El autoregistro público SIEMPRE asigna el rol de alumno.
+        # Los roles de gestión/admin son asignados exclusivamente por un Administrador en /usuarios/nuevo.
+        role = 'alumno'
 
         if not username or not email or not password or not nombre_completo:
             flash('Por favor complete todos los campos requeridos.', 'warning')

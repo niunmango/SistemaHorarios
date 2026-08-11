@@ -50,7 +50,7 @@ def seed_database():
     admin = User(username='admin', email='admin@curza.com.ar', nombre_completo='Administrador del Sistema', role='admin')
     admin.set_password('admin123')
 
-    gestor = User(username='gestor', email='gestor.aulas@curza.com.ar', nombre_completo='Gestor de Aulas CURZAS', role='gestor')
+    gestor = User(username='gestor', email='gestor.aulas@curza.com.ar', nombre_completo='Gestor de Aulas CURZAS', role='gestor_aulas')
     gestor.set_password('gestor123')
 
     docente = User(username='docente', email='ramiro.garcia@curza.com.ar', nombre_completo='Prof. Ramiro García Poggi', role='docente', profesor=p_ramiro)

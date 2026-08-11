@@ -132,6 +132,58 @@ class TestSistemaHorariosRules(unittest.TestCase):
         self.assertEqual(res.status_code, 200)
         self.assertIn('Clases Programadas Actualmente', res.get_data(as_text=True))
 
+    def test_registro_publico_fuerza_rol_alumno(self):
+        client = self.app.test_client()
+        # Intentar autorregistrarse como 'admin' desde el formulario público
+        res = client.post('/register', data={
+            'username': 'attacker',
+            'email': 'attacker@test.com',
+            'nombre_completo': 'Attacker Admin',
+            'password': 'password123',
+            'confirm_password': 'password123',
+            'role': 'admin'
+        }, follow_redirects=True)
+        self.assertEqual(res.status_code, 200)
+        
+        user = User.query.filter_by(username='attacker').first()
+        self.assertIsNotNone(user)
+        # El rol debe ser estrictamente 'alumno'
+        self.assertEqual(user.role, 'alumno')
+        self.assertFalse(user.is_admin)
+        self.assertFalse(user.is_gestor)
+
+    def test_crear_usuario_duplicado_email_mantiene_estabilidad(self):
+        seed_database()
+        user_admin = User.query.filter_by(username='admin').first()
+        client = self.app.test_client()
+        client.post('/login', data={'username': 'admin', 'password': 'admin123'})
+
+        # Intentar crear un usuario con el email de un usuario ya existente
+        res = client.post('/usuarios/nuevo', data={
+            'username': 'nuevo_user',
+            'email': 'admin@curza.com.ar', # Email duplicado
+            'nombre_completo': 'Otro Admin',
+            'password': 'password123',
+            'role': 'alumno'
+        })
+        self.assertEqual(res.status_code, 200)
+        self.assertIn('correo electrónico ya está registrado', res.get_data(as_text=True))
+
+    def test_mover_bloque_api_horario_invalido(self):
+        seed_database()
+        client = self.app.test_client()
+        client.post('/login', data={'username': 'admin', 'password': 'admin123'})
+        bloque = BloqueHorario.query.first()
+
+        # Enviar horario que excedería las 24 horas del día
+        res = client.post(f'/api/bloque/{bloque.id}/mover', json={
+            'dia_semana': 0,
+            'hora_inicio': '23:30'
+        })
+        self.assertEqual(res.status_code, 400)
+        data = res.get_json()
+        self.assertFalse(data['success'])
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -10,10 +10,14 @@ def calcular_minimo_sincronico(carga_horaria_total):
 
 
 def time_to_minutes(t):
+    if not t:
+        return 0
     if isinstance(t, str):
         parts = t.split(':')
         return int(parts[0]) * 60 + int(parts[1])
-    return t.hour * 60 + t.minute
+    if hasattr(t, 'hour') and hasattr(t, 'minute'):
+        return t.hour * 60 + t.minute
+    return 0
 
 
 def hay_solapamiento_horario(inicio1, fin1, inicio2, fin2):
