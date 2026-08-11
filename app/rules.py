@@ -137,7 +137,7 @@ def validar_bloque_nuevo(asignatura_id, dia_semana, hora_inicio, hora_fin, modal
                     f"'{b.asignatura.nombre}' ({b.rol_docente_label}) el {b.dia_nombre} de {b.hora_inicio.strftime('%H:%M')} a {b.hora_fin.strftime('%H:%M')}."
                 )
 
-    # 3. Colisión de Cohorte (Mismo año y cuatrimestre de la misma carrera)
+    # 3. Colisión de Cohorte (Mismo año, cuatrimestre y carrera)
     if not asignatura.es_externa and modalidad != 'Asincrónico (PEDCO)':
         bloques_cohorte = BloqueHorario.query.join(Asignatura).filter(
             Asignatura.carrera_id == asignatura.carrera_id,
@@ -153,9 +153,8 @@ def validar_bloque_nuevo(asignatura_id, dia_semana, hora_inicio, hora_fin, modal
                 continue
             if hay_solapamiento_horario(hora_inicio, hora_fin, b.hora_inicio, b.hora_fin):
                 advertencias.append(
-                    f"Advertencia de Cohorte: Solapamiento horaria para estudiantes de {asignatura.anio_cursada}° Año "
-                    f"({asignatura.cuatrimestre}° Cuatrimestre) de {asignatura.carrera.codigo} con la materia '{b.asignatura.nombre}' "
-                    f"({b.hora_inicio.strftime('%H:%M')} - {b.hora_fin.strftime('%H:%M')})."
+                    f"Advertencia de Cohorte ({asignatura.anio_cursada}° Año {asignatura.carrera.codigo}): Solapamiento de horarios para estudiantes "
+                    f"de la misma cohorte con la materia '{b.asignatura.nombre}' el {b.dia_nombre} de {b.hora_inicio.strftime('%H:%M')} a {b.hora_fin.strftime('%H:%M')}."
                 )
 
     es_valido = len(errores) == 0
@@ -171,7 +170,7 @@ def obtener_ids_bloques_en_conflicto(cuatrimestre=None):
 def obtener_mapa_explicacion_conflictos(cuatrimestre=None):
     """
     Retorna un diccionario {bloque_id: [lista_de_mensajes_de_conflicto]} 
-    explicando detalladamente cada conflicto filtrado por cuatrimestre.
+    explicando detalladamente cada conflicto (Aula, Docente o Cohorte) filtrado por cuatrimestre.
     """
     mapa = {}
 
@@ -243,6 +242,43 @@ def obtener_mapa_explicacion_conflictos(cuatrimestre=None):
                             f"'{b2.asignatura.nombre}' el {b1.dia_nombre} de {b1.hora_inicio.strftime('%H:%M')} a {b1.hora_fin.strftime('%H:%M')}.")
                     msj2 = (f"⚠️ CONFLICTO DOCENTE ({c_num}° Cuatrimestre): El prof. '{prof_nom}' tiene superpuesta la clase de "
                             f"'{b1.asignatura.nombre}' el {b2.dia_nombre} de {b2.hora_inicio.strftime('%H:%M')} a {b2.hora_fin.strftime('%H:%M')}.")
+
+                    agregar_conflicto(b1.id, msj1)
+                    agregar_conflicto(b2.id, msj2)
+
+    # 3. Conflictos de Cohorte (Misma Carrera + Mismo Año + Mismo Cuatrimestre)
+    query_cohorte = BloqueHorario.query.join(Asignatura).filter(
+        BloqueHorario.es_sincronico == True,
+        Asignatura.es_externa == False
+    )
+    if cuatrimestre:
+        query_cohorte = query_cohorte.filter(Asignatura.cuatrimestre == cuatrimestre)
+    bloques_cohorte = query_cohorte.all()
+
+    for i in range(len(bloques_cohorte)):
+        for j in range(i + 1, len(bloques_cohorte)):
+            b1 = bloques_cohorte[i]
+            b2 = bloques_cohorte[j]
+
+            if b1.asignatura_id == b2.asignatura_id:
+                continue
+            if not es_mismo_cuatrimestre(b1, b2):
+                continue
+            if son_materia_compartida(b1, b2):
+                continue
+
+            if (b1.asignatura.carrera_id == b2.asignatura.carrera_id and 
+                b1.asignatura.anio_cursada == b2.asignatura.anio_cursada and
+                b1.dia_semana == b2.dia_semana):
+                if hay_solapamiento_horario(b1.hora_inicio, b1.hora_fin, b2.hora_inicio, b2.hora_fin):
+                    c_num = b1.asignatura.cuatrimestre
+                    anio_num = b1.asignatura.anio_cursada
+                    carr_cod = b1.asignatura.carrera.codigo
+
+                    msj1 = (f"⚠️ SOLAPAMIENTO DE COHORTE ({anio_num}° Año {carr_cod} - {c_num}° Cuatri): Superposición de clases para estudiantes "
+                            f"entre '{b1.asignatura.nombre}' y '{b2.asignatura.nombre}' el {b1.dia_nombre} de {b1.hora_inicio.strftime('%H:%M')} a {b1.hora_fin.strftime('%H:%M')}.")
+                    msj2 = (f"⚠️ SOLAPAMIENTO DE COHORTE ({anio_num}° Año {carr_cod} - {c_num}° Cuatri): Superposición de clases para estudiantes "
+                            f"entre '{b2.asignatura.nombre}' y '{b1.asignatura.nombre}' el {b2.dia_nombre} de {b2.hora_inicio.strftime('%H:%M')} a {b2.hora_fin.strftime('%H:%M')}.")
 
                     agregar_conflicto(b1.id, msj1)
                     agregar_conflicto(b2.id, msj2)
