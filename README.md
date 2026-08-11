@@ -2,6 +2,7 @@
 
 ![Python Version](https://img.shields.io/badge/Python-3.12-blue.svg)
 ![Framework](https://img.shields.io/badge/Framework-Flask-emerald.svg)
+![UI Feature](https://img.shields.io/badge/UI-Drag%20%26%20Drop%20Calendar-purple.svg)
 ![Authentication](https://img.shields.io/badge/Auth-OAuth%202.0%20%2B%20Local-indigo.svg)
 ![Status](https://img.shields.io/badge/Status-v1.0.0%20Ready-success.svg)
 ![License](https://img.shields.io/badge/License-GPLv3-blue.svg)
@@ -16,13 +17,14 @@ Diseñado específicamente para las carreras:
 
 ## 🌟 Características Principales
 
-1. **Grilla Horaria Semanal Simétrica e Interactiva (08:00 a 21:00 hs)**:
+1. **Grilla Horaria Semanal Interactiva con Drag & Drop (08:00 a 21:00 hs)**:
+   - **Reubicación de Clases Estilo Google Calendar**: Arrastrar y soltar clases directamente sobre la grilla para cambiar el día y horario.
    - Vista de pantalla completa (1920p) optimizada con bloques de hora de alto simétrico.
-   - Tarjeta flotante emergente (**Hover Popover Tooltip**) con orientación inteligente para filas inferiores (a partir de las 16:00 hs).
+   - Tarjeta flotante emergente (**Hover Popover Tooltip**) con explicación detallada de conflictos por cuatrimestre.
    - Coincidencias simultáneas en subcolumnas dinámicas ordenadas por número de aula física de izquierda a derecha (*ej: Sala 1 [JCBrocca] a la izquierda, Sala 2 [JColombo] a la derecha*).
 2. **Motor de Reglas de Negocio y Auditoría Automática**:
    - **Regla del >50% Sincrónico**: Verifica que cada materia cumpla $H_{sinc} \ge \lfloor H_{total}/2 \rfloor + 1$ horas semanales presenciales o por videoconferencia.
-   - **Detección de Conflictos de Aula**: Alerta inmediata ante solapamientos de aulas o laboratorios físicos.
+   - **Detección de Conflictos de Aula**: Alerta inmediata ante solapamientos de aulas o laboratorios físicos en el mismo cuatrimestre.
    - **Detección de Conflictos Docentes**: Bloquea el intento de asignar al mismo profesor a dos clases sincrónicas en simultáneo.
    - **Módulo de Bloqueos Externos**: Permite reservar aulas para materias de Exactas o eventos sin alterar las métricas sincrónicas de las tecnicaturas.
 3. **Autenticación Doble (OAuth 2.0 + Credenciales Locales)**:
@@ -41,7 +43,7 @@ Diseñado específicamente para las carreras:
 
 - **Backend**: Python 3.12, Flask, Flask-SQLAlchemy 3.1, Flask-Login, Authlib (OAuth 2.0), Werkzeug.
 - **Base de Datos**: SQLite3 / PostgreSQL compatible (ORM SQLAlchemy 2.0).
-- **Frontend**: HTML5, Tailwind CSS, FontAwesome 6, JavaScript Vanilla.
+- **Frontend**: HTML5 Drag & Drop API, Tailwind CSS, FontAwesome 6, JavaScript Vanilla.
 - **Testing**: Suite nativa de `unittest` con 100% de éxito en verificación de reglas.
 - **Contenedores**: Archivo `Containerfile` multi-etapa compatible con Podman y Docker.
 - **CI/CD**: GitHub Actions Pipeline en `.github/workflows/ci-cd.yml`.
@@ -59,7 +61,7 @@ cd SistemaHorarios
 python3 -m venv venv
 source venv/bin/activate
 
-# Instalar dependencias (incluye Authlib para OAuth 2.0)
+# Instalar dependencias
 pip install -r requirements.txt
 ```
 
@@ -132,7 +134,7 @@ podman logs -f sistema_horarios_app
 | *(Sin login)* | *(Sin login)* | Público / Alumno | Consulta de grilla, filtros e impresión. |
 | `OAuth 2.0` | *(Google / Provider)* | Docente / Alumno | Autenticación con email institucional. |
 | `alumno` | `alumno123` | Alumno | Consulta de horarios y materias. |
-| `docente` | `docente123` | Profesor | Reubicación autogestionada de sus clases. |
+| `docente` | `docente123` | Profesor | Reubicación autogestionada Drag & Drop. |
 | `gestor` | `gestor123` | Gestor de Aulas | ABM de clases, materias y bloqueos. |
 | `admin` | `admin123` | Administrador | Control total + ABM de usuarios y plantel docente. |
 
@@ -145,17 +147,17 @@ SistemaHorarios/
 ├── app/
 │   ├── __init__.py           # App Factory, SQLAlchemy y Authlib OAuth 2.0
 │   ├── models.py             # Modelos User, Profesor, Carrera, Asignatura, EspacioFisico, BloqueHorario
-│   ├── rules.py              # Motor de validación (>50% sync, solapamiento aulas y docentes)
-│   ├── seed.py               # Puebla los planes de estudio TUASSL, TUDW y docentes
+│   ├── rules.py              # Motor de validación (>50% sync, solapamiento aulas y docentes por cuatri)
+│   ├── seed.py               # Puebla los planes de estudio 1er y 2do cuatri TUASSL, TUDW y docentes
 │   ├── auth.py               # Rutas de autenticación (Login local + OAuth 2.0 Google/Institucional)
-│   ├── routes.py             # Rutas principales (Horarios, Materias, Profesores, Usuarios, APIs)
+│   ├── routes.py             # Rutas principales (Horarios, Materias, Profesores, Usuarios, API Drag & Drop)
 │   ├── static/
 │   │   └── favicon.png       # Icono oficial de la aplicación
 │   └── templates/            # Plantillas Jinja2 con Tailwind CSS
 │       ├── base.html
 │       ├── login.html
 │       ├── dashboard.html
-│       ├── horarios.html
+│       ├── horarios.html     # Grilla semanal interactiva con Drag & Drop y Popovers
 │       ├── materias.html
 │       ├── materia_form.html
 │       ├── profesores.html

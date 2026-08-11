@@ -19,7 +19,7 @@ El sistema admite 4 niveles de permisos diferenciados:
 | :--- | :--- | :--- | :--- |
 | **Público / Alumnos** | *(Sin login)* | *(Sin login)* | **Consulta pública de solo lectura**. Acceso libre a la grilla semanal, filtros y exportación/impresión en PDF. |
 | **Alumno Autenticado** | `alumno` | `alumno123` | Consulta de horarios y aulas de cursada. |
-| **Profesor / Docente** | `docente` | `docente123` | Consulta y **reubicación de sus propias clases asignadas** (siempre que el cambio no genere colisiones). |
+| **Profesor / Docente** | `docente` | `docente123` | Consulta y **reubicación interactiva Drag & Drop de sus propias clases asignadas** (siempre que el cambio no genere colisiones). |
 | **Gestor de Aulas** | `gestor` | `gestor123` | Control completo de materias, reservas de aulas, bloqueos externos y creación de horarios. |
 | **Administrador** | `admin` | `admin123` | **Acceso total**, incluyendo Alta, Edición y Baja de Usuarios y Docentes. |
 
@@ -33,7 +33,7 @@ El sistema admite 4 niveles de permisos diferenciados:
 2. **Filtros Interactivos**:
    - En la barra superior de filtros se puede acotar la grilla seleccionando:
      - **Carrera**: Alternar entre *TUASSL*, *TUDW* o *Materias Externas*.
-     - **Cuatrimestre**: Filtrar materias de 1° o 2° Cuatrimestre.
+     - **Cuatrimestre**: Filtrar materias de 1° o 2° Cuatrimestre (con aislamiento automático de reglas de conflicto).
      - **Profesor/a**: Ver el cronograma de un docente en particular.
      - **Aula / Sala**: Consultar la ocupación de la *Sala 1 (JCBrocca)*, *Sala 2 (JColombo)*, *Aula 18*, etc.
      - **Modalidad**: Filtrar por clases Presenciales, Virtuales o Híbridas.
@@ -44,6 +44,7 @@ El sistema admite 4 niveles de permisos diferenciados:
      - Horario exacto y duración total en horas.
      - Docente a cargo e indicación de su rol (**PAD** para Teoría o **AYP** para Práctica).
      - Aula asignada y observaciones pedagógicas.
+     - En caso de solapamiento, **explicación detallada del conflicto** (aula o docente afectado).
 
 4. **Impresión Ecológica / Exportación a PDF**:
    - Haga clic en el botón **`🖨️ Imprimir / PDF`** o presione `Ctrl + P`.
@@ -51,9 +52,19 @@ El sistema admite 4 niveles de permisos diferenciados:
 
 ---
 
-## 🏫 4. Guía de Uso: Gestión de Horarios y Aulas (Gestores y Docentes)
+## 🖐️ 4. Guía de Uso: Reubicación Interactiva Drag & Drop (Docentes y Gestores)
 
-### 4.1. Programación de una Nueva Clase (`/bloques/nuevo`)
+1. Inicie sesión con su usuario docente (ej: `docente`) o gestor (`gestor`).
+2. En la grilla semanal (`/horarios`), haga clic sobre el bloque de la clase que desea reubicar y **arrástrelo directamente hacia el nuevo día y horario deseado** (estilo Google Calendar).
+3. **Validación Anticonflicto Instantánea**:
+   - Si la nueva celda de destino está libre, la clase se moverá inmediatamente y el sistema confirmará con un aviso verde.
+   - Si la celda destino genera un **solapamiento de aula** o un **conflicto de horarios del docente**, el cambio será bloqueado y el sistema mostrará una notificación flotante indicando el motivo exacto.
+
+---
+
+## 🏫 5. Guía de Uso: Gestión de Horarios y Aulas (Gestores y Docentes)
+
+### 5.1. Programación de una Nueva Clase (`/bloques/nuevo`)
 1. Inicie sesión con una cuenta de **Gestor** (`gestor`) o **Administrador** (`admin`).
 2. Haga clic en el botón **`+ Nueva Clase / Reserva`** de la barra superior.
 3. Seleccione la Asignatura, el Profesor/a a cargo y su **Rol en esta Clase** (`PAD` o `AYP`).
@@ -61,15 +72,9 @@ El sistema admite 4 niveles de permisos diferenciados:
 5. Si requiere espacio físico, seleccione el **Aula / Sala**.
 6. Haga clic en **Guardar Reserva**. El motor de validación verificará instantáneamente que no existan colisiones de aulas ni solapamientos docentes.
 
-### 4.2. Reubicación Autogestionada por Profesores (`/bloques/<id>/editar`)
-1. Inicie sesión con su usuario docente (ej: `docente`).
-2. En la grilla semanal, pose el mouse sobre la clase asignada a su nombre y haga clic en **`✏️ Mover / Reubicar`**.
-3. Cambie el día, la hora o el aula deseada y presione **Guardar Reserva**.
-4. **Protección de Colisiones**: Si la nueva posición elegida está ocupada por otra materia o por otro compromiso del docente, el sistema bloqueará el cambio y mostrará un mensaje de advertencia específico.
-
 ---
 
-## 📚 5. Guía de Uso: Planes de Estudio y Regla del >50% Sincrónico (`/materias`)
+## 📚 6. Guía de Uso: Planes de Estudio y Regla del >50% Sincrónico (`/materias`)
 
 Para las carreras TUASSL y TUDW, la normativa exige que la carga semanal sincrónica $H_{sinc}$ cumpla:
 $$H_{sinc} \ge \left\lfloor \frac{H_{total}}{2} \right\rfloor + 1$$
@@ -81,7 +86,7 @@ $$H_{sinc} \ge \left\lfloor \frac{H_{total}}{2} \right\rfloor + 1$$
 
 ---
 
-## 🔒 6. Guía de Uso: Bloqueos de Aula Externos (`/bloqueos_externos`)
+## 🔒 7. Guía de Uso: Bloqueos de Aula Externos (`/bloqueos_externos`)
 
 1. Ingrese a la sección **`Bloqueos Externos`**.
 2. Permite reservar aulas físicas para materias de otras unidades académicas (Exactas, Economía) o eventos institucionales.
@@ -89,7 +94,7 @@ $$H_{sinc} \ge \left\lfloor \frac{H_{total}}{2} \right\rfloor + 1$$
 
 ---
 
-## 👨‍🏫 7. Guía de Uso: Administración de Docentes y Usuarios (`/profesores` y `/usuarios`)
+## 👨‍🏫 8. Guía de Uso: Administración de Docentes y Usuarios (`/profesores` y `/usuarios`)
 
 - **Plantel Docente (`/profesores`)**: Acceso para dar de alta, modificar la categoría habitual (`PAD` / `AYP`) o dar de baja a profesores.
 - **Gestión de Cuentas (`/usuarios`)**: Exclusivo para Administradores. Permite crear usuarios, asignar roles (`admin`, `gestor_aulas`, `docente`, `alumno`), modificar contraseñas y **vincular cuentas de usuario a la entidad de un Profesor**.

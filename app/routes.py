@@ -103,6 +103,68 @@ def horarios():
                            mapa_conflictos=mapa_conflictos)
 
 
+# API DRAG & DROP PARA REUBICAR CLASES INTERACTIVAMENTE
+@main_bp.route('/api/bloque/<int:id>/mover', methods=['POST'])
+@login_required
+def api_mover_bloque(id):
+    bloque = db.session.get(BloqueHorario, id)
+    if not bloque:
+        return jsonify({'success': False, 'error': 'Bloque de clase no encontrado.'}), 404
+
+    if not current_user.puede_editar_bloque(bloque):
+        return jsonify({'success': False, 'error': 'No tienes permisos para reubicar esta clase.'}), 403
+
+    data = request.get_json() or {}
+    nuevo_dia = data.get('dia_semana')
+    nueva_hora_ini_str = data.get('hora_inicio')
+
+    if nuevo_dia is None or not nueva_hora_ini_str:
+        return jsonify({'success': False, 'error': 'Datos de ubicación incompletos.'}), 400
+
+    try:
+        nuevo_dia = int(nuevo_dia)
+        h_parts = [int(p) for p in nueva_hora_ini_str.split(':')]
+        nueva_hora_ini = time(h_parts[0], h_parts[1])
+        
+        duracion_min = int(bloque.duracion_horas * 60)
+        fin_min = (h_parts[0] * 60 + h_parts[1]) + duracion_min
+        fin_h = fin_min // 60
+        fin_m = fin_min % 60
+        if fin_h >= 24:
+            return jsonify({'success': False, 'error': 'La clase excede el horario del día.'}), 400
+        nueva_hora_fin = time(fin_h, fin_m)
+
+    except Exception as e:
+        return jsonify({'success': False, 'error': f'Horario no válido: {str(e)}'}), 400
+
+    valido, errores, adv = validar_bloque_nuevo(
+        asignatura_id=bloque.asignatura_id,
+        dia_semana=nuevo_dia,
+        hora_inicio=nueva_hora_ini,
+        hora_fin=nueva_hora_fin,
+        modalidad=bloque.modalidad,
+        espacio_fisico_id=bloque.espacio_fisico_id,
+        profesor_id=bloque.profesor_id,
+        bloque_id_actual=bloque.id
+    )
+
+    if not valido:
+        return jsonify({
+            'success': False,
+            'error': errores[0] if errores else 'Conflicto detectado al reubicar la clase.'
+        }), 400
+
+    bloque.dia_semana = nuevo_dia
+    bloque.hora_inicio = nueva_hora_ini
+    bloque.hora_fin = nueva_hora_fin
+    db.session.commit()
+
+    return jsonify({
+        'success': True,
+        'message': f"¡Clase '{bloque.asignatura.nombre}' movida al {bloque.dia_nombre} de {nueva_hora_ini.strftime('%H:%M')} a {nueva_hora_fin.strftime('%H:%M')}!"
+    })
+
+
 @main_bp.route('/profesores')
 @login_required
 def profesores():
@@ -123,18 +185,14 @@ def nuevo_profesor():
         email = request.form.get('email', '').strip()
 
         if not nombre_completo:
-            flash('Por favor ingrese el nombre del profesor/a.', 'warning')
+            flash('Por favor complete el nombre completo del profesor.', 'warning')
             return render_template('profesor_form.html', profesor=None)
 
-        profesor = Profesor(
-            nombre_completo=nombre_completo,
-            categoria_habitual=categoria_habitual,
-            email=email
-        )
-        db.session.add(profesor)
+        prof = Profesor(nombre_completo=nombre_completo, categoria_habitual=categoria_habitual, email=email)
+        db.session.add(prof)
         db.session.commit()
 
-        flash(f'Profesor/a "{nombre_completo}" registrado/a correctamente.', 'success')
+        flash(f'Profesor/a "{nombre_completo}" dado de alta con éxito.', 'success')
         return redirect(url_for('main.profesores'))
 
     return render_template('profesor_form.html', profesor=None)
@@ -147,105 +205,105 @@ def editar_profesor(id):
         flash('No tienes permisos para editar profesores.', 'danger')
         return redirect(url_for('main.profesores'))
 
-    profesor = db.session.get(Profesor, id)
-    if not profesor:
+    prof = db.session.get(Profesor, id)
+    if not prof:
         flash('Profesor no encontrado.', 'danger')
         return redirect(url_for('main.profesores'))
 
     if request.method == 'POST':
-        profesor.nombre_completo = request.form.get('nombre_completo', '').strip()
-        profesor.categoria_habitual = request.form.get('categoria_habitual', 'PAD')
-        profesor.email = request.form.get('email', '').strip()
+        prof.nombre_completo = request.form.get('nombre_completo', '').strip()
+        prof.categoria_habitual = request.form.get('categoria_habitual', 'PAD')
+        prof.email = request.form.get('email', '').strip()
 
         db.session.commit()
-        flash(f'Profesor/a "{profesor.nombre_completo}" actualizado/a correctamente.', 'success')
+        flash(f'Profesor/a "{prof.nombre_completo}" actualizado con éxito.', 'success')
         return redirect(url_for('main.profesores'))
 
-    return render_template('profesor_form.html', profesor=profesor)
+    return render_template('profesor_form.html', profesor=prof)
 
 
 @main_bp.route('/profesores/<int:id>/eliminar', methods=['POST'])
 @login_required
 def eliminar_profesor(id):
-    if not current_user.is_admin:
-        flash('Solo los administradores pueden dar de baja profesores.', 'danger')
+    if not current_user.is_gestor:
+        flash('No tienes permisos para eliminar profesores.', 'danger')
         return redirect(url_for('main.profesores'))
 
-    profesor = db.session.get(Profesor, id)
-    if profesor:
-        nombre = profesor.nombre_completo
-        db.session.delete(profesor)
+    prof = db.session.get(Profesor, id)
+    if prof:
+        db.session.delete(prof)
         db.session.commit()
-        flash(f'Profesor/a "{nombre}" dado/a de baja correctamente.', 'info')
+        flash(f'Profesor/a "{prof.nombre_completo}" eliminado con éxito.', 'success')
+
     return redirect(url_for('main.profesores'))
 
 
 @main_bp.route('/materias')
 @login_required
 def materias():
-    carreras = Carrera.query.filter(Carrera.codigo != 'EXTERNA').all()
     carrera_id = request.args.get('carrera_id', type=int)
     cuatrimestre = request.args.get('cuatrimestre', type=int)
-    
+
     query = Asignatura.query.filter_by(es_externa=False)
     if carrera_id:
         query = query.filter_by(carrera_id=carrera_id)
     if cuatrimestre:
         query = query.filter_by(cuatrimestre=cuatrimestre)
 
-    asignaturas = query.order_by(Asignatura.carrera_id, Asignatura.anio_cursada, Asignatura.cuatrimestre).all()
+    lista_materias = query.order_by(Asignatura.carrera_id, Asignatura.anio_cursada, Asignatura.cuatrimestre).all()
+    carreras = Carrera.query.filter(Carrera.codigo != 'EXTERNA').all()
 
-    return render_template('materias.html', asignaturas=asignaturas, carreras=carreras, carrera_id=carrera_id, cuatrimestre=cuatrimestre)
+    reporte = auditar_sistema_completo()
+
+    return render_template('materias.html',
+                           materias=lista_materias,
+                           carreras=carreras,
+                           carrera_id=carrera_id,
+                           cuatrimestre=cuatrimestre,
+                           reporte=reporte)
 
 
 @main_bp.route('/materias/nueva', methods=['GET', 'POST'])
 @login_required
 def nueva_materia():
     if not current_user.is_gestor:
-        flash('No tienes permisos para agregar materias.', 'danger')
+        flash('No tienes permisos para crear materias.', 'danger')
         return redirect(url_for('main.materias'))
 
-    carreras = Carrera.query.all()
+    carreras = Carrera.query.filter(Carrera.codigo != 'EXTERNA').all()
     profesores = Profesor.query.order_by(Profesor.nombre_completo).all()
 
     if request.method == 'POST':
         carrera_id = request.form.get('carrera_id', type=int)
-        anio_cursada = request.form.get('anio_cursada', type=int)
-        cuatrimestre = request.form.get('cuatrimestre', type=int)
         codigo = request.form.get('codigo', '').strip()
         nombre = request.form.get('nombre', '').strip()
-        carga_horaria = request.form.get('carga_horaria_semanal', type=int)
+        anio_cursada = request.form.get('anio_cursada', type=int, default=1)
+        cuatrimestre = request.form.get('cuatrimestre', type=int, default=1)
+        carga_horaria_semanal = request.form.get('carga_horaria_semanal', type=int, default=4)
         profesor_pad_id = request.form.get('profesor_pad_id', type=int) or None
-        profesores_ayp_ids = request.form.getlist('profesores_ayp_ids', type=int)
-        es_externa = bool(request.form.get('es_externa'))
+        ayps_selected = request.form.getlist('profesores_ayp_ids', type=int)
 
-        if not carrera_id or not nombre or not carga_horaria:
-            flash('Por favor complete los campos obligatorios.', 'warning')
+        if not carrera_id or not codigo or not nombre:
+            flash('Por favor complete los campos requeridos.', 'warning')
             return render_template('materia_form.html', carreras=carreras, profesores=profesores, materia=None)
 
-        pad_obj = db.session.get(Profesor, profesor_pad_id) if profesor_pad_id else None
-        prof_cargo_txt = pad_obj.nombre_completo if pad_obj else ""
-
-        materia = Asignatura(
+        asig = Asignatura(
             carrera_id=carrera_id,
-            anio_cursada=anio_cursada,
-            cuatrimestre=cuatrimestre,
             codigo=codigo,
             nombre=nombre,
-            carga_horaria_semanal=carga_horaria,
-            profesor_pad_id=profesor_pad_id,
-            profesor_cargo=prof_cargo_txt,
-            es_externa=es_externa
+            anio_cursada=anio_cursada,
+            cuatrimestre=cuatrimestre,
+            carga_horaria_semanal=carga_horaria_semanal,
+            profesor_pad_id=profesor_pad_id
         )
 
-        if profesores_ayp_ids:
-            ayp_objs = Profesor.query.filter(Profesor.id.in_(profesores_ayp_ids)).all()
-            materia.profesores_ayp = ayp_objs
+        if ayps_selected:
+            asig.profesores_ayp = Profesor.query.filter(Profesor.id.in_(ayps_selected)).all()
 
-        db.session.add(materia)
+        db.session.add(asig)
         db.session.commit()
 
-        flash(f'Asignatura "{nombre}" creada con éxito.', 'success')
+        flash(f'Materia "{nombre}" creada con éxito.', 'success')
         return redirect(url_for('main.materias'))
 
     return render_template('materia_form.html', carreras=carreras, profesores=profesores, materia=None)
@@ -258,241 +316,202 @@ def editar_materia(id):
         flash('No tienes permisos para editar materias.', 'danger')
         return redirect(url_for('main.materias'))
 
-    materia = db.session.get(Asignatura, id)
-    if not materia:
+    asig = db.session.get(Asignatura, id)
+    if not asig:
         flash('Materia no encontrada.', 'danger')
         return redirect(url_for('main.materias'))
 
-    carreras = Carrera.query.all()
+    carreras = Carrera.query.filter(Carrera.codigo != 'EXTERNA').all()
     profesores = Profesor.query.order_by(Profesor.nombre_completo).all()
 
     if request.method == 'POST':
-        materia.carrera_id = request.form.get('carrera_id', type=int)
-        materia.anio_cursada = request.form.get('anio_cursada', type=int)
-        materia.cuatrimestre = request.form.get('cuatrimestre', type=int)
-        materia.codigo = request.form.get('codigo', '').strip()
-        materia.nombre = request.form.get('nombre', '').strip()
-        materia.carga_horaria_semanal = request.form.get('carga_horaria_semanal', type=int)
-        
-        profesor_pad_id = request.form.get('profesor_pad_id', type=int) or None
-        profesores_ayp_ids = request.form.getlist('profesores_ayp_ids', type=int)
-        
-        materia.profesor_pad_id = profesor_pad_id
-        if profesor_pad_id:
-            pad_obj = db.session.get(Profesor, profesor_pad_id)
-            materia.profesor_cargo = pad_obj.nombre_completo if pad_obj else ""
+        asig.carrera_id = request.form.get('carrera_id', type=int)
+        asig.codigo = request.form.get('codigo', '').strip()
+        asig.nombre = request.form.get('nombre', '').strip()
+        asig.anio_cursada = request.form.get('anio_cursada', type=int, default=1)
+        asig.cuatrimestre = request.form.get('cuatrimestre', type=int, default=1)
+        asig.carga_horaria_semanal = request.form.get('carga_horaria_semanal', type=int, default=4)
+        asig.profesor_pad_id = request.form.get('profesor_pad_id', type=int) or None
 
-        if profesores_ayp_ids:
-            ayp_objs = Profesor.query.filter(Profesor.id.in_(profesores_ayp_ids)).all()
-            materia.profesores_ayp = ayp_objs
-        else:
-            materia.profesores_ayp = []
-
-        materia.es_externa = bool(request.form.get('es_externa'))
+        ayps_selected = request.form.getlist('profesores_ayp_ids', type=int)
+        asig.profesores_ayp = Profesor.query.filter(Profesor.id.in_(ayps_selected)).all() if ayps_selected else []
 
         db.session.commit()
-        flash(f'Asignatura "{materia.nombre}" actualizada correctamente (PAD asignado + {len(materia.profesores_ayp)} AYPs).', 'success')
+        flash(f'Materia "{asig.nombre}" actualizada con éxito.', 'success')
         return redirect(url_for('main.materias'))
 
-    return render_template('materia_form.html', carreras=carreras, profesores=profesores, materia=materia)
-
-
-@main_bp.route('/materias/<int:id>/eliminar', methods=['POST'])
-@login_required
-def eliminar_materia(id):
-    if not current_user.is_admin:
-        flash('Solo los administradores pueden eliminar materias.', 'danger')
-        return redirect(url_for('main.materias'))
-
-    materia = db.session.get(Asignatura, id)
-    if materia:
-        nombre = materia.nombre
-        db.session.delete(materia)
-        db.session.commit()
-        flash(f'La asignatura "{nombre}" y sus bloques horarios han sido eliminados.', 'info')
-    return redirect(url_for('main.materias'))
+    return render_template('materia_form.html', carreras=carreras, profesores=profesores, materia=asig)
 
 
 @main_bp.route('/bloques/nuevo', methods=['GET', 'POST'])
 @login_required
 def nuevo_bloque():
     if not current_user.is_gestor:
-        flash('No tienes permisos para crear bloques horarios.', 'danger')
+        flash('No tienes permisos para programar nuevas clases.', 'danger')
         return redirect(url_for('main.horarios'))
 
-    asignatura_id = request.args.get('asignatura_id', type=int)
-    asignaturas = Asignatura.query.all()
-    aulas = EspacioFisico.query.filter_by(activa=True).all()
+    asignaturas = Asignatura.query.order_by(Asignatura.nombre).all()
     profesores = Profesor.query.order_by(Profesor.nombre_completo).all()
+    aulas = EspacioFisico.query.order_by(EspacioFisico.nombre).all()
 
     if request.method == 'POST':
-        asig_id = request.form.get('asignatura_id', type=int)
-        espacio_id = request.form.get('espacio_fisico_id', type=int) or None
+        asignatura_id = request.form.get('asignatura_id', type=int)
         profesor_id = request.form.get('profesor_id', type=int) or None
         rol_docente = request.form.get('rol_docente', 'PAD')
         dia_semana = request.form.get('dia_semana', type=int)
-        h_ini_str = request.form.get('hora_inicio')
-        h_fin_str = request.form.get('hora_fin')
-        tipo = request.form.get('tipo')
-        modalidad = request.form.get('modalidad')
+        hora_inicio_str = request.form.get('hora_inicio')
+        hora_fin_str = request.form.get('hora_fin')
+        tipo = request.form.get('tipo', 'Teoría')
+        modalidad = request.form.get('modalidad', 'Presencial')
+        espacio_fisico_id = request.form.get('espacio_fisico_id', type=int) or None
         observaciones = request.form.get('observaciones', '').strip()
 
-        if not asig_id or dia_semana is None or not h_ini_str or not h_fin_str:
-            flash('Por favor complete los datos del horario.', 'warning')
-            return render_template('bloque_form.html', asignaturas=asignaturas, aulas=aulas, profesores=profesores, modalidades=MODALIDADES, tipos_clase=TIPOS_CLASE, dias_semana=DIAS_SEMANA, bloque=None, asignatura_id=asignatura_id)
+        if not asignatura_id or dia_semana is None or not hora_inicio_str or not hora_fin_str:
+            flash('Por favor complete todos los campos obligatorios del horario.', 'warning')
+            return render_template('bloque_form.html', asignaturas=asignaturas, profesores=profesores, aulas=aulas, bloque=None, DIAS_SEMANA=DIAS_SEMANA, MODALIDADES=MODALIDADES, TIPOS_CLASE=TIPOS_CLASE)
 
-        try:
-            h_ini = datetime.strptime(h_ini_str, '%H:%M').time()
-            h_fin = datetime.strptime(h_fin_str, '%H:%M').time()
-        except ValueError:
-            flash('Formato de hora inválido. Use HH:MM', 'danger')
-            return render_template('bloque_form.html', asignaturas=asignaturas, aulas=aulas, profesores=profesores, modalidades=MODALIDADES, tipos_clase=TIPOS_CLASE, dias_semana=DIAS_SEMANA, bloque=None, asignatura_id=asignatura_id)
+        h_ini = time.fromisoformat(hora_inicio_str)
+        h_fin = time.fromisoformat(hora_fin_str)
 
-        m_ini = h_ini.hour * 60 + h_ini.minute
-        m_fin = h_fin.hour * 60 + h_fin.minute
-        duracion = (m_fin - m_ini) / 60.0 if m_fin > m_ini else 0
-
-        es_sincronico = (modalidad not in ['Asincrónico (PEDCO)'])
-        asig = db.session.get(Asignatura, asig_id)
-        es_bloqueo = (modalidad == 'Bloqueo Aula' or (asig and asig.es_externa))
-
-        valido, errores, advertencias = validar_bloque_nuevo(asig_id, dia_semana, h_ini, h_fin, modalidad, espacio_id, profesor_id)
+        valido, errores, advertencias = validar_bloque_nuevo(
+            asignatura_id, dia_semana, h_ini, h_fin, modalidad, espacio_fisico_id, profesor_id
+        )
 
         if not valido:
             for err in errores:
                 flash(err, 'danger')
-            return render_template('bloque_form.html', asignaturas=asignaturas, aulas=aulas, profesores=profesores, modalidades=MODALIDADES, tipos_clase=TIPOS_CLASE, dias_semana=DIAS_SEMANA, bloque=None, asignatura_id=asignatura_id)
+            return render_template('bloque_form.html', asignaturas=asignaturas, profesores=profesores, aulas=aulas, bloque=None, DIAS_SEMANA=DIAS_SEMANA, MODALIDADES=MODALIDADES, TIPOS_CLASE=TIPOS_CLASE)
 
         for adv in advertencias:
             flash(adv, 'warning')
 
+        es_sincronico = (modalidad != 'Asincrónico (PEDCO)')
+        es_bloqueo_externo = (modalidad == 'Bloqueo Aula')
+        duracion_horas = (h_fin.hour * 60 + h_fin.minute - (h_ini.hour * 60 + h_ini.minute)) / 60.0
+
         bloque = BloqueHorario(
-            asignatura_id=asig_id,
-            espacio_fisico_id=espacio_id if modalidad in ['Presencial', 'Híbrido', 'Bloqueo Aula'] else None,
+            asignatura_id=asignatura_id,
+            espacio_fisico_id=espacio_fisico_id if modalidad in ['Presencial', 'Híbrido', 'Bloqueo Aula'] else None,
             profesor_id=profesor_id,
             rol_docente=rol_docente,
             dia_semana=dia_semana,
             hora_inicio=h_ini,
             hora_fin=h_fin,
-            duracion_horas=duracion,
+            duracion_horas=duracion_horas,
             tipo=tipo,
             modalidad=modalidad,
             es_sincronico=es_sincronico,
-            es_bloqueo_externo=es_bloqueo,
+            es_bloqueo_externo=es_bloqueo_externo,
             observaciones=observaciones
         )
+
         db.session.add(bloque)
         db.session.commit()
 
-        flash(f'Reserva de clase guardada correctamente (Rol Docente: {rol_docente}).', 'success')
+        flash('Clase / Reserva programada con éxito.', 'success')
         return redirect(url_for('main.horarios'))
 
-    return render_template('bloque_form.html', asignaturas=asignaturas, aulas=aulas, profesores=profesores, modalidades=MODALIDADES, tipos_clase=TIPOS_CLASE, dias_semana=DIAS_SEMANA, bloque=None, asignatura_id=asignatura_id)
+    return render_template('bloque_form.html', asignaturas=asignaturas, profesores=profesores, aulas=aulas, bloque=None, DIAS_SEMANA=DIAS_SEMANA, MODALIDADES=MODALIDADES, TIPOS_CLASE=TIPOS_CLASE)
 
 
-# EDICIÓN / REUBICACIÓN DE CLASE (PERMITIDO A GESTORES O AL PROFESOR DE LA MATERIA SI NO HAY CONFLICTO)
 @main_bp.route('/bloques/<int:id>/editar', methods=['GET', 'POST'])
 @login_required
 def editar_bloque(id):
     bloque = db.session.get(BloqueHorario, id)
     if not bloque:
-        flash('Bloque de horario no encontrado.', 'danger')
+        flash('Bloque de clase no encontrado.', 'danger')
         return redirect(url_for('main.horarios'))
 
     if not current_user.puede_editar_bloque(bloque):
-        flash('No tienes permisos para modificar esta clase. Solo el profesor/a asignado o los gestores pueden reubicarla.', 'danger')
+        flash('No tienes permisos para modificar este bloque de clase.', 'danger')
         return redirect(url_for('main.horarios'))
 
-    asignaturas = Asignatura.query.all()
-    aulas = EspacioFisico.query.filter_by(activa=True).all()
+    asignaturas = Asignatura.query.order_by(Asignatura.nombre).all()
     profesores = Profesor.query.order_by(Profesor.nombre_completo).all()
+    aulas = EspacioFisico.query.order_by(EspacioFisico.nombre).all()
 
     if request.method == 'POST':
-        asig_id = request.form.get('asignatura_id', type=int)
-        espacio_id = request.form.get('espacio_fisico_id', type=int) or None
+        asignatura_id = request.form.get('asignatura_id', type=int)
         profesor_id = request.form.get('profesor_id', type=int) or None
         rol_docente = request.form.get('rol_docente', 'PAD')
         dia_semana = request.form.get('dia_semana', type=int)
-        h_ini_str = request.form.get('hora_inicio')
-        h_fin_str = request.form.get('hora_fin')
-        tipo = request.form.get('tipo')
-        modalidad = request.form.get('modalidad')
+        hora_inicio_str = request.form.get('hora_inicio')
+        hora_fin_str = request.form.get('hora_fin')
+        tipo = request.form.get('tipo', 'Teoría')
+        modalidad = request.form.get('modalidad', 'Presencial')
+        espacio_fisico_id = request.form.get('espacio_fisico_id', type=int) or None
         observaciones = request.form.get('observaciones', '').strip()
 
-        if not asig_id or dia_semana is None or not h_ini_str or not h_fin_str:
-            flash('Por favor complete los datos requeridos.', 'warning')
-            return render_template('bloque_form.html', asignaturas=asignaturas, aulas=aulas, profesores=profesores, modalidades=MODALIDADES, tipos_clase=TIPOS_CLASE, dias_semana=DIAS_SEMANA, bloque=bloque, asignatura_id=bloque.asignatura_id)
+        h_ini = time.fromisoformat(hora_inicio_str)
+        h_fin = time.fromisoformat(hora_fin_str)
 
-        try:
-            h_ini = datetime.strptime(h_ini_str, '%H:%M').time()
-            h_fin = datetime.strptime(h_fin_str, '%H:%M').time()
-        except ValueError:
-            flash('Formato de hora inválido. Use HH:MM', 'danger')
-            return render_template('bloque_form.html', asignaturas=asignaturas, aulas=aulas, profesores=profesores, modalidades=MODALIDADES, tipos_clase=TIPOS_CLASE, dias_semana=DIAS_SEMANA, bloque=bloque, asignatura_id=bloque.asignatura_id)
-
-        m_ini = h_ini.hour * 60 + h_ini.minute
-        m_fin = h_fin.hour * 60 + h_fin.minute
-        duracion = (m_fin - m_ini) / 60.0 if m_fin > m_ini else 0
-
-        # Validar colisiones (excluyendo este bloque_id de la comparación)
-        valido, errores, advertencias = validar_bloque_nuevo(asig_id, dia_semana, h_ini, h_fin, modalidad, espacio_id, profesor_id, bloque_id_actual=bloque.id)
+        valido, errores, advertencias = validar_bloque_nuevo(
+            asignatura_id, dia_semana, h_ini, h_fin, modalidad, espacio_fisico_id, profesor_id, bloque_id_actual=bloque.id
+        )
 
         if not valido:
             for err in errores:
                 flash(err, 'danger')
-            return render_template('bloque_form.html', asignaturas=asignaturas, aulas=aulas, profesores=profesores, modalidades=MODALIDADES, tipos_clase=TIPOS_CLASE, dias_semana=DIAS_SEMANA, bloque=bloque, asignatura_id=bloque.asignatura_id)
+            return render_template('bloque_form.html', asignaturas=asignaturas, profesores=profesores, aulas=aulas, bloque=bloque, DIAS_SEMANA=DIAS_SEMANA, MODALIDADES=MODALIDADES, TIPOS_CLASE=TIPOS_CLASE)
 
         for adv in advertencias:
             flash(adv, 'warning')
 
-        bloque.asignatura_id = asig_id
-        bloque.espacio_fisico_id = espacio_id if modalidad in ['Presencial', 'Híbrido', 'Bloqueo Aula'] else None
+        bloque.asignatura_id = asignatura_id
         bloque.profesor_id = profesor_id
         bloque.rol_docente = rol_docente
         bloque.dia_semana = dia_semana
         bloque.hora_inicio = h_ini
         bloque.hora_fin = h_fin
-        bloque.duracion_horas = duracion
+        bloque.duracion_horas = (h_fin.hour * 60 + h_fin.minute - (h_ini.hour * 60 + h_ini.minute)) / 60.0
         bloque.tipo = tipo
         bloque.modalidad = modalidad
-        bloque.es_sincronico = (modalidad not in ['Asincrónico (PEDCO)'])
+        bloque.espacio_fisico_id = espacio_fisico_id if modalidad in ['Presencial', 'Híbrido', 'Bloqueo Aula'] else None
+        bloque.es_sincronico = (modalidad != 'Asincrónico (PEDCO)')
+        bloque.es_bloqueo_externo = (modalidad == 'Bloqueo Aula')
         bloque.observaciones = observaciones
 
         db.session.commit()
-
-        flash(f'La clase de "{bloque.asignatura.nombre}" fue reubicada con éxito ({bloque.dia_nombre} {h_ini_str}-{h_fin_str}).', 'success')
+        flash('Clase / Reserva reubicada con éxito.', 'success')
         return redirect(url_for('main.horarios'))
 
-    return render_template('bloque_form.html', asignaturas=asignaturas, aulas=aulas, profesores=profesores, modalidades=MODALIDADES, tipos_clase=TIPOS_CLASE, dias_semana=DIAS_SEMANA, bloque=bloque, asignatura_id=bloque.asignatura_id)
+    return render_template('bloque_form.html', asignaturas=asignaturas, profesores=profesores, aulas=aulas, bloque=bloque, DIAS_SEMANA=DIAS_SEMANA, MODALIDADES=MODALIDADES, TIPOS_CLASE=TIPOS_CLASE)
 
 
 @main_bp.route('/bloques/<int:id>/eliminar', methods=['POST'])
 @login_required
 def eliminar_bloque(id):
     bloque = db.session.get(BloqueHorario, id)
-    if not bloque:
-        flash('Bloque no encontrado.', 'danger')
-        return redirect(url_for('main.horarios'))
-
-    if not current_user.puede_editar_bloque(bloque):
-        flash('No tienes permisos para eliminar esta clase.', 'danger')
-        return redirect(url_for('main.horarios'))
-
-    db.session.delete(bloque)
-    db.session.commit()
-    flash('El bloque horario fue eliminado.', 'info')
+    if bloque and current_user.puede_editar_bloque(bloque):
+        db.session.delete(bloque)
+        db.session.commit()
+        flash('Clase eliminada del cronograma.', 'info')
     return redirect(url_for('main.horarios'))
 
 
-# GESTIÓN DE USUARIOS (ALTA, EDICIÓN Y BAJA POR ADMINISTRADOR)
+@main_bp.route('/aulas')
+def aulas():
+    lista_aulas = EspacioFisico.query.order_by(EspacioFisico.nombre).all()
+    return render_template('aulas.html', aulas=lista_aulas)
+
+
+@main_bp.route('/bloqueos_externos')
+def bloqueos_externos():
+    bloqueos = BloqueHorario.query.filter(
+        (BloqueHorario.es_bloqueo_externo == True) | (BloqueHorario.asignatura.has(es_externa=True))
+    ).order_by(BloqueHorario.dia_semana, BloqueHorario.hora_inicio).all()
+    
+    return render_template('bloqueos_externos.html', bloqueos=bloqueos)
+
+
 @main_bp.route('/usuarios')
 @login_required
 def usuarios():
     if not current_user.is_admin:
-        flash('Acceso restringido a administradores.', 'danger')
+        flash('Solo los administradores pueden gestionar usuarios.', 'danger')
         return redirect(url_for('main.dashboard'))
 
-    lista_usuarios = User.query.order_by(User.id).all()
+    lista_usuarios = User.query.order_by(User.username).all()
     return render_template('usuarios.html', usuarios=lista_usuarios)
 
 
@@ -500,7 +519,7 @@ def usuarios():
 @login_required
 def nuevo_usuario():
     if not current_user.is_admin:
-        flash('Solo los administradores pueden dar de alta usuarios.', 'danger')
+        flash('Solo los administradores pueden crear usuarios.', 'danger')
         return redirect(url_for('main.usuarios'))
 
     profesores = Profesor.query.order_by(Profesor.nombre_completo).all()
@@ -509,12 +528,12 @@ def nuevo_usuario():
         username = request.form.get('username', '').strip()
         email = request.form.get('email', '').strip()
         nombre_completo = request.form.get('nombre_completo', '').strip()
+        password = request.form.get('password', '')
         role = request.form.get('role', 'alumno')
         profesor_id = request.form.get('profesor_id', type=int) or None
-        password = request.form.get('password', '').strip()
 
-        if not username or not email or not nombre_completo or not password:
-            flash('Por favor complete los campos obligatorios.', 'warning')
+        if not username or not email or not password or not nombre_completo:
+            flash('Por favor complete todos los campos obligatorios.', 'warning')
             return render_template('usuario_form.html', profesores=profesores, usuario=None)
 
         if User.query.filter_by(username=username).first():
@@ -578,61 +597,13 @@ def eliminar_usuario(id):
         flash('Solo los administradores pueden eliminar usuarios.', 'danger')
         return redirect(url_for('main.usuarios'))
 
-    if id == current_user.id:
-        flash('No puede eliminar su propia cuenta de administrador.', 'warning')
-        return redirect(url_for('main.usuarios'))
-
     usuario = db.session.get(User, id)
     if usuario:
-        username = usuario.username
+        if usuario.id == current_user.id:
+            flash('No puedes eliminar tu propia cuenta de usuario en uso.', 'danger')
+            return redirect(url_for('main.usuarios'))
         db.session.delete(usuario)
         db.session.commit()
-        flash(f'El usuario "{username}" fue eliminado.', 'info')
+        flash(f'Usuario "{usuario.username}" eliminado con éxito.', 'success')
+
     return redirect(url_for('main.usuarios'))
-
-
-# VISTA PÚBLICA DE AULAS (ACCESO LIBRE)
-@main_bp.route('/aulas')
-def aulas():
-    aulas_lista = EspacioFisico.query.all()
-    return render_template('aulas.html', aulas=aulas_lista)
-
-
-# VISTA PÚBLICA DE BLOQUEOS DE AULA
-@main_bp.route('/bloqueos_externos')
-def bloqueos_externos():
-    bloqueos = BloqueHorario.query.filter((BloqueHorario.es_bloqueo_externo == True) | (BloqueHorario.modalidad == 'Bloqueo Aula')).all()
-    aulas_lista = EspacioFisico.query.filter_by(activa=True).all()
-    materias_externas = Asignatura.query.filter_by(es_externa=True).all()
-    return render_template('bloqueos_externos.html', bloqueos=bloqueos, aulas=aulas_lista, materias_externas=materias_externas, dias_semana=DIAS_SEMANA)
-
-
-@main_bp.route('/api/validar_bloque', methods=['POST'])
-def api_validar_bloque():
-    data = request.json or {}
-    asig_id = data.get('asignatura_id')
-    dia_semana = data.get('dia_semana')
-    h_ini_str = data.get('hora_inicio')
-    h_fin_str = data.get('hora_fin')
-    modalidad = data.get('modalidad')
-    espacio_id = data.get('espacio_fisico_id')
-    profesor_id = data.get('profesor_id')
-    bloque_id = data.get('bloque_id')
-
-    if not asig_id or dia_semana is None or not h_ini_str or not h_fin_str:
-        return jsonify({'valido': False, 'errores': ['Faltan datos requeridos'], 'advertencias': []})
-
-    try:
-        h_ini = datetime.strptime(h_ini_str, '%H:%M').time()
-        h_fin = datetime.strptime(h_fin_str, '%H:%M').time()
-    except ValueError:
-        return jsonify({'valido': False, 'errores': ['Formato de hora inválido'], 'advertencias': []})
-
-    valido, errores, advertencias = validar_bloque_nuevo(asig_id, int(dia_semana), h_ini, h_fin, modalidad, espacio_id, profesor_id, bloque_id_actual=bloque_id)
-    return jsonify({'valido': valido, 'errores': errores, 'advertencias': advertencias})
-
-
-@main_bp.route('/api/auditoria')
-def api_auditoria():
-    reporte = auditar_sistema_completo()
-    return jsonify(reporte)
