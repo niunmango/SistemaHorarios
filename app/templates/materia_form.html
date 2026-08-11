@@ -1,0 +1,148 @@
+{% extends "base.html" %}
+
+{% block title %}{% if materia %}Editar Materia{% else %}Nueva Materia{% endif %}{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto py-6">
+
+    <div class="bg-slate-800 border border-slate-700/80 rounded-2xl shadow-2xl p-6 sm:p-8 space-y-6">
+        
+        <div>
+            <h1 class="text-2xl font-bold text-white tracking-tight">{% if materia %}Editar Asignatura{% else %}Alta de Nueva Asignatura{% endif %}</h1>
+            <p class="text-slate-400 text-sm mt-1">Defina la carrera, cuatrimestre, carga horaria y docentes (1 PAD + Múltiples AYPs)</p>
+        </div>
+
+        <form method="POST" action="{% if materia %}{{ url_for('main.editar_materia', id=materia.id) }}{% else %}{{ url_for('main.nueva_materia') }}{% endif %}" class="space-y-4">
+            
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div class="sm:col-span-1">
+                    <label for="carrera_id" class="block text-sm font-medium text-slate-300 mb-1">Carrera *</label>
+                    <select name="carrera_id" id="carrera_id" required class="w-full px-4 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                        {% for c in carreras %}
+                        <option value="{{ c.id }}" {% if materia and materia.carrera_id == c.id %}selected{% endif %}>{{ c.codigo }} - {{ c.nombre }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="sm:col-span-1">
+                    <label for="anio_cursada" class="block text-sm font-medium text-slate-300 mb-1">Año *</label>
+                    <select name="anio_cursada" id="anio_cursada" required class="w-full px-4 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                        <option value="1" {% if materia and materia.anio_cursada == 1 %}selected{% endif %}>1° Año</option>
+                        <option value="2" {% if materia and materia.anio_cursada == 2 %}selected{% endif %}>2° Año</option>
+                        <option value="3" {% if materia and materia.anio_cursada == 3 %}selected{% endif %}>3° Año</option>
+                    </select>
+                </div>
+
+                <div class="sm:col-span-1">
+                    <label for="cuatrimestre" class="block text-sm font-medium text-slate-300 mb-1">Cuatrimestre *</label>
+                    <select name="cuatrimestre" id="cuatrimestre" required class="w-full px-4 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                        <option value="1" {% if materia and materia.cuatrimestre == 1 %}selected{% endif %}>1° Cuatrimestre</option>
+                        <option value="2" {% if materia and materia.cuatrimestre == 2 %}selected{% endif %}>2° Cuatrimestre</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div class="sm:col-span-1">
+                    <label for="codigo" class="block text-sm font-medium text-slate-300 mb-1">Código</label>
+                    <input type="text" id="codigo" name="codigo" value="{{ materia.codigo if materia else '' }}"
+                           class="w-full px-4 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                           placeholder="Ej: TUASSL-101">
+                </div>
+
+                <div class="sm:col-span-2">
+                    <label for="carga_horaria_semanal" class="block text-sm font-medium text-slate-300 mb-1">Carga Horaria Semanal Total (Hs) *</label>
+                    <input type="number" id="carga_horaria_semanal" name="carga_horaria_semanal" required min="1" max="20"
+                           value="{{ materia.carga_horaria_semanal if materia else '8' }}"
+                           oninput="actualizarCalculoSincronico(this.value)"
+                           class="w-full px-4 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white focus:ring-2 focus:ring-blue-500 focus:outline-none font-mono">
+                </div>
+            </div>
+
+            <!-- Dynamic calculation hint -->
+            <div id="hint_sincronico" class="p-4 bg-blue-950/40 border border-blue-500/30 rounded-xl text-xs text-blue-200 flex items-center space-x-3">
+                <i class="fa-solid fa-circle-info text-blue-400 text-base"></i>
+                <div>
+                    <p class="font-bold">Regla de Horas Sincrónicas (>50%):</p>
+                    <p>Para una carga semanal de <span id="hint_total" class="font-bold text-white">8</span>hs, la materia deberá dictar al menos <span id="hint_min_sinc" class="font-bold text-emerald-300">5</span>hs sincrónicas (en aula física o videoconferencia) y hasta <span id="hint_max_pedco" class="font-bold text-amber-300">3</span>hs asincrónicas en PEDCO.</p>
+                </div>
+            </div>
+
+            <div>
+                <label for="nombre" class="block text-sm font-medium text-slate-300 mb-1">Nombre de la Asignatura *</label>
+                <input type="text" id="nombre" name="nombre" required value="{{ materia.nombre if materia else '' }}"
+                       class="w-full px-4 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                       placeholder="Ej: Programación Web Avanzada">
+            </div>
+
+            <!-- ASIGNACIÓN DOCENTE: 1 PAD + MÚLTIPLES AYPs -->
+            <div class="space-y-4 pt-2 border-t border-slate-700/60">
+                <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                    <i class="fa-solid fa-chalkboard-user text-indigo-400"></i> Asignación Docente (1 PAD + Múltiples AYP)
+                </h3>
+
+                <!-- 1. Profesor Adjunto / Titular (PAD) - MÁXIMO 1 -->
+                <div>
+                    <label for="profesor_pad_id" class="block text-xs font-semibold text-slate-300 mb-1">
+                        Profesor Adjunto / Titular (PAD) — <span class="text-indigo-400 font-bold">A cargo de Teoría (Máximo 1)</span>
+                    </label>
+                    <select name="profesor_pad_id" id="profesor_pad_id" class="w-full px-4 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                        <option value="">Sin Profesor PAD Asignado...</option>
+                        {% for p in profesores %}
+                        <option value="{{ p.id }}" {% if materia and materia.profesor_pad_id == p.id %}selected{% endif %}>
+                            {{ p.nombre_completo }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- 2. Ayudantes de Primera / JTP (AYP) - MÚLTIPLES PERMITIDOS -->
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1.5">
+                        Ayudantes de Primera / JTP (AYP) — <span class="text-emerald-400 font-bold">A cargo de Prácticas / Talleres (Permite seleccionar múltiples)</span>
+                    </label>
+                    
+                    <div class="bg-slate-900 border border-slate-700 rounded-xl p-3 max-h-48 overflow-y-auto space-y-2">
+                        {% set ayp_ids_asignados = materia.profesores_ayp | map(attribute='id') | list if materia else [] %}
+                        {% for p in profesores %}
+                        <label class="flex items-center space-x-2.5 p-1.5 hover:bg-slate-800 rounded-lg cursor-pointer transition-colors">
+                            <input type="checkbox" name="profesores_ayp_ids" value="{{ p.id }}"
+                                   {% if p.id in ayp_ids_asignados %}checked{% endif %}
+                                   class="rounded bg-slate-800 border-slate-600 text-blue-600 focus:ring-blue-500">
+                            <span class="text-xs text-slate-200 font-medium">{{ p.nombre_completo }}</span>
+                        </label>
+                        {% endfor %}
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="flex items-center space-x-2 pt-2">
+                <input type="checkbox" id="es_externa" name="es_externa" {% if materia and materia.es_externa %}checked{% endif %} class="rounded bg-slate-900 border-slate-700 text-blue-600 focus:ring-blue-500">
+                <label for="es_externa" class="text-sm font-medium text-slate-300">Es una materia externa (Bloqueo de Aula Externa)</label>
+            </div>
+
+            <div class="flex items-center justify-between pt-4 border-t border-slate-700">
+                <a href="{{ url_for('main.materias') }}" class="px-4 py-2.5 text-slate-400 hover:text-white text-sm font-semibold">Cancelar</a>
+                <button type="submit" class="px-6 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-semibold text-sm rounded-xl shadow-lg transition-all">
+                    Guardar Asignatura
+                </button>
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+<script>
+    function actualizarCalculoSincronico(val) {
+        const total = parseInt(val) || 0;
+        const minSinc = Math.floor(total / 2) + 1;
+        const maxPedco = Math.max(0, total - minSinc);
+        document.getElementById('hint_total').innerText = total;
+        document.getElementById('hint_min_sinc').innerText = minSinc;
+        document.getElementById('hint_max_pedco').innerText = maxPedco;
+    }
+</script>
+{% endblock %}

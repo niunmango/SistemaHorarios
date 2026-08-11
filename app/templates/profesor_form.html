@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block title %}{% if profesor %}Editar Profesor{% else %}Nuevo Profesor{% endif %}{% endblock %}
+
+{% block content %}
+<div class="max-w-xl mx-auto py-6">
+
+    <div class="bg-slate-800 border border-slate-700/80 rounded-2xl shadow-2xl p-6 sm:p-8 space-y-6">
+        
+        <div>
+            <h1 class="text-2xl font-bold text-white tracking-tight">{% if profesor %}Editar Profesor{% else %}Alta de Nuevo Docente{% endif %}</h1>
+            <p class="text-slate-400 text-sm mt-1">Complete los datos personales y la categoría del profesor/a</p>
+        </div>
+
+        <form method="POST" action="{% if profesor %}{{ url_for('main.editar_profesor', id=profesor.id) }}{% else %}{{ url_for('main.nuevo_profesor') }}{% endif %}" class="space-y-4">
+            
+            <div>
+                <label for="nombre_completo" class="block text-sm font-medium text-slate-300 mb-1">Nombre Completo *</label>
+                <input type="text" id="nombre_completo" name="nombre_completo" required value="{{ profesor.nombre_completo if profesor else '' }}"
+                       class="w-full px-4 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                       placeholder="Ej: Prof. Ramiro García Poggi">
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label for="categoria_habitual" class="block text-sm font-medium text-slate-300 mb-1">Categoría Principal *</label>
+                    <select name="categoria_habitual" id="categoria_habitual" required class="w-full px-4 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                        <option value="PAD" {% if profesor and profesor.categoria_habitual == 'PAD' %}selected{% endif %}>PAD (Prof. Adjunto / Titular)</option>
+                        <option value="AYP" {% if profesor and profesor.categoria_habitual == 'AYP' %}selected{% endif %}>AYP (Ayudante de Primera / JTP)</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label for="email" class="block text-sm font-medium text-slate-300 mb-1">Correo Electrónico</label>
+                    <input type="email" id="email" name="email" value="{{ profesor.email if profesor else '' }}"
+                           class="w-full px-4 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                           placeholder="ejemplo@fi.uncoma.edu.ar">
+                </div>
+            </div>
+
+            <div class="flex items-center justify-between pt-4 border-t border-slate-700">
+                <a href="{{ url_for('main.profesores') }}" class="px-4 py-2.5 text-slate-400 hover:text-white text-sm font-semibold">Cancelar</a>
+                <button type="submit" class="px-6 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-semibold text-sm rounded-xl shadow-lg transition-all">
+                    Guardar Docente
+                </button>
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+{% endblock %}

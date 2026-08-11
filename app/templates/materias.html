@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+
+{% block title %}Planes de Estudio y Materias{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+            <h1 class="text-2xl font-bold text-white tracking-tight">Planes de Estudio y Cátedras</h1>
+            <p class="text-slate-400 text-sm">Control de materias con asignación de 1 PAD (Teoría) + múltiples AYPs (Práctica) y norma >50% sincrónico</p>
+        </div>
+
+        {% if current_user.is_gestor %}
+        <a href="{{ url_for('main.nueva_materia') }}" class="px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-semibold text-sm rounded-xl shadow-lg shadow-blue-600/30 flex items-center gap-2 transition-all">
+            <i class="fa-solid fa-plus"></i> Nueva Materia
+        </a>
+        {% endif %}
+    </div>
+
+    <!-- Filter by carrera & cuatrimestre -->
+    <div class="flex flex-wrap items-center gap-2">
+        <a href="{{ url_for('main.materias') }}" class="px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all {% if not carrera_id and not cuatrimestre %}bg-blue-600 border-blue-500 text-white{% else %}bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700{% endif %}">
+            Todas las Materias
+        </a>
+        {% for c in carreras %}
+        <a href="{{ url_for('main.materias', carrera_id=c.id) }}" class="px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all {% if carrera_id == c.id %}bg-blue-600 border-blue-500 text-white{% else %}bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700{% endif %}">
+            {{ c.codigo }}
+        </a>
+        {% endfor %}
+        <span class="text-slate-600 font-bold px-1">|</span>
+        <a href="{{ url_for('main.materias', cuatrimestre=1) }}" class="px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all {% if cuatrimestre == 1 %}bg-indigo-600 border-indigo-500 text-white{% else %}bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700{% endif %}">
+            1° Cuatrimestre
+        </a>
+        <a href="{{ url_for('main.materias', cuatrimestre=2) }}" class="px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all {% if cuatrimestre == 2 %}bg-indigo-600 border-indigo-500 text-white{% else %}bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700{% endif %}">
+            2° Cuatrimestre
+        </a>
+    </div>
+
+    <!-- Materias Table -->
+    <div class="bg-slate-800 rounded-2xl border border-slate-700/80 shadow-xl overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse min-w-[850px]">
+                <thead>
+                    <tr class="bg-slate-900/90 text-slate-400 text-xs uppercase tracking-wider border-b border-slate-700">
+                        <th class="py-3.5 px-4 font-bold">Carrera / Año</th>
+                        <th class="py-3.5 px-4 font-bold">Cuatrimestre</th>
+                        <th class="py-3.5 px-4 font-bold">Asignatura</th>
+                        <th class="py-3.5 px-4 font-bold">Docentes (PAD / AYPs)</th>
+                        <th class="py-3.5 px-4 font-bold text-center">Carga Total</th>
+                        <th class="py-3.5 px-4 font-bold text-center">Mín. Sincrónico (>50%)</th>
+                        <th class="py-3.5 px-4 font-bold text-center">Prog. Sincrónico</th>
+                        <th class="py-3.5 px-4 font-bold text-center">Estado Regla</th>
+                        {% if current_user.is_gestor %}
+                        <th class="py-3.5 px-4 font-bold text-right">Acciones</th>
+                        {% endif %}
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-700/60 text-sm">
+                    {% for asig in asignaturas %}
+                    <tr class="hover:bg-slate-700/30 transition-colors">
+                        
+                        <td class="py-3.5 px-4">
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-bold bg-slate-900 border border-slate-700 text-blue-300">
+                                {{ asig.carrera.codigo }}
+                            </span>
+                            <span class="text-xs text-slate-400 font-medium block mt-0.5">{{ asig.anio_cursada }}° Año</span>
+                        </td>
+
+                        <td class="py-3.5 px-4">
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-semibold bg-slate-900 border border-slate-700 text-indigo-300">
+                                {{ asig.cuatrimestre }}° Cuatrimestre
+                            </span>
+                        </td>
+
+                        <td class="py-3.5 px-4">
+                            <h4 class="font-bold text-white leading-snug">{{ asig.nombre }}</h4>
+                        </td>
+
+                        <!-- Docentes: 1 PAD + Múltiples AYPs -->
+                        <td class="py-3.5 px-4 text-xs space-y-1">
+                            <div class="flex items-center space-x-1.5">
+                                <span class="px-1.5 py-0.5 rounded bg-indigo-950 text-indigo-300 border border-indigo-500/30 font-mono font-bold text-[10px]">PAD</span>
+                                <span class="text-slate-200 font-medium">{{ asig.nombre_pad }}</span>
+                            </div>
+
+                            {% if asig.nombres_ayps_lista %}
+                            <div class="flex flex-wrap items-center gap-1 pt-0.5">
+                                <span class="px-1.5 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-500/30 font-mono font-bold text-[10px]">AYP</span>
+                                <span class="text-slate-300 font-medium">
+                                    {{ asig.nombres_ayps_lista | join(', ') }}
+                                </span>
+                            </div>
+                            {% else %}
+                            <span class="text-[11px] text-slate-500 italic block">Sin ayudantes (AYP) asignados</span>
+                            {% endif %}
+                        </td>
+
+                        <td class="py-3.5 px-4 text-center font-mono font-bold text-slate-200">
+                            {{ asig.carga_horaria_semanal }} hs/sem
+                        </td>
+
+                        <td class="py-3.5 px-4 text-center font-mono font-bold text-blue-400 bg-blue-950/20">
+                            &ge; {{ asig.min_horas_sincronicas }} hs
+                        </td>
+
+                        <td class="py-3.5 px-4 text-center font-mono font-bold text-slate-100">
+                            {{ asig.total_horas_sincronicas_programadas }} hs
+                        </td>
+
+                        <td class="py-3.5 px-4 text-center">
+                            {% if asig.cumple_regla_sincronica %}
+                            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                                <i class="fa-solid fa-check mr-1.5"></i> Cumple (>50%)
+                            </span>
+                            {% else %}
+                            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                                <i class="fa-solid fa-triangle-exclamation mr-1.5"></i> Falta {{ asig.min_horas_sincronicas - asig.total_horas_sincronicas_programadas }}h sinc.
+                            </span>
+                            {% endif %}
+                        </td>
+
+                        {% if current_user.is_gestor %}
+                        <td class="py-3.5 px-4 text-right space-x-2">
+                            <a href="{{ url_for('main.nuevo_bloque', asignatura_id=asig.id) }}" class="text-xs text-blue-400 hover:text-blue-300 font-semibold" title="Agregar horario de clase">
+                                <i class="fa-solid fa-calendar-plus"></i> +Clase
+                            </a>
+                            <a href="{{ url_for('main.editar_materia', id=asig.id) }}" class="text-xs text-slate-400 hover:text-slate-200 font-semibold" title="Editar materia">
+                                <i class="fa-solid fa-pen-to-square"></i>
+                            </a>
+                        </td>
+                        {% endif %}
+
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

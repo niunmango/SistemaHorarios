@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+
+{% block title %}{% if usuario %}Editar Usuario{% else %}Nuevo Usuario{% endif %}{% endblock %}
+
+{% block content %}
+<div class="max-w-xl mx-auto py-6">
+
+    <div class="bg-slate-800 border border-slate-700/80 rounded-2xl shadow-2xl p-6 sm:p-8 space-y-6">
+        
+        <div>
+            <h1 class="text-2xl font-bold text-white tracking-tight">{% if usuario %}Editar Usuario{% else %}Alta de Nuevo Usuario{% endif %}</h1>
+            <p class="text-slate-400 text-sm mt-1">Configure las credenciales, rol y vinculación con la plantilla docente</p>
+        </div>
+
+        <form method="POST" action="{% if usuario %}{{ url_for('main.editar_usuario', id=usuario.id) }}{% else %}{{ url_for('main.nuevo_usuario') }}{% endif %}" class="space-y-4">
+            
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label for="username" class="block text-sm font-medium text-slate-300 mb-1">Nombre de Usuario *</label>
+                    <input type="text" id="username" name="username" required value="{{ usuario.username if usuario else '' }}"
+                           class="w-full px-4 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                           placeholder="ej: ramiro.garcia">
+                </div>
+
+                <div>
+                    <label for="email" class="block text-sm font-medium text-slate-300 mb-1">Correo Electrónico *</label>
+                    <input type="email" id="email" name="email" required value="{{ usuario.email if usuario else '' }}"
+                           class="w-full px-4 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                           placeholder="ejemplo@fi.uncoma.edu.ar">
+                </div>
+            </div>
+
+            <div>
+                <label for="nombre_completo" class="block text-sm font-medium text-slate-300 mb-1">Nombre Completo *</label>
+                <input type="text" id="nombre_completo" name="nombre_completo" required value="{{ usuario.nombre_completo if usuario else '' }}"
+                       class="w-full px-4 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                       placeholder="Ej: Prof. Ramiro García Poggi">
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label for="role" class="block text-sm font-medium text-slate-300 mb-1">Rol en el Sistema *</label>
+                    <select name="role" id="role" required class="w-full px-4 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                        <option value="admin" {% if usuario and usuario.role == 'admin' %}selected{% endif %}>Administrador General</option>
+                        <option value="gestor_aulas" {% if usuario and usuario.role == 'gestor_aulas' %}selected{% endif %}>Gestor de Horarios y Aulas</option>
+                        <option value="docente" {% if usuario and usuario.role == 'docente' %}selected{% endif %}>Profesor / Docente (Mover sus clases)</option>
+                        <option value="alumno" {% if usuario and usuario.role == 'alumno' %}selected{% endif %}>Alumno (Consulta)</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label for="profesor_id" class="block text-sm font-medium text-slate-300 mb-1">Profesor/a Vinculado/a</label>
+                    <select name="profesor_id" id="profesor_id" class="w-full px-4 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                        <option value="">Sin vinculación docente</option>
+                        {% for p in profesores %}
+                        <option value="{{ p.id }}" {% if usuario and usuario.profesor_id == p.id %}selected{% endif %}>
+                            {{ p.nombre_completo }} ({{ p.categoria_habitual }})
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <div>
+                <label for="password" class="block text-sm font-medium text-slate-300 mb-1">
+                    Contraseña {% if usuario %}<span class="text-xs text-slate-400 font-normal">(Dejar en blanco para no cambiar)</span>{% else %}*{% endif %}
+                </label>
+                <input type="password" id="password" name="password" {% if not usuario %}required{% endif %}
+                       class="w-full px-4 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                       placeholder="******">
+            </div>
+
+            <div class="flex items-center justify-between pt-4 border-t border-slate-700">
+                <a href="{{ url_for('main.usuarios') }}" class="px-4 py-2.5 text-slate-400 hover:text-white text-sm font-semibold">Cancelar</a>
+                <button type="submit" class="px-6 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-semibold text-sm rounded-xl shadow-lg transition-all">
+                    Guardar Usuario
+                </button>
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+{% endblock %}

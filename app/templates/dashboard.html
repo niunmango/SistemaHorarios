@@ -1,0 +1,214 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard Principal{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+
+    <!-- Header & Hero Section -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-gradient-to-r from-slate-800 via-slate-800 to-blue-950 p-6 rounded-2xl border border-slate-700/80 shadow-xl">
+        <div>
+            <div class="inline-flex items-center space-x-2 px-3 py-1 bg-blue-500/10 border border-blue-500/20 rounded-full text-xs font-semibold text-blue-400 mb-2">
+                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                <span>CURZA — Departamento de Ciencia y Tecnología</span>
+            </div>
+            <h1 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">Panel de Control de Horarios, Aulas y Docentes</h1>
+            <p class="text-slate-400 text-sm mt-1">Gestión integral para TUASSL y TUDW con control de profesores (PAD/AYP), colisión de aulas y sincronía (>50%).</p>
+        </div>
+
+        <div class="flex items-center gap-3">
+            <a href="{{ url_for('main.horarios') }}" class="px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-semibold text-sm rounded-xl shadow-lg shadow-blue-600/30 flex items-center gap-2 transition-all">
+                <i class="fa-solid fa-calendar-days"></i> Ver Grilla Semanal
+            </a>
+            {% if current_user.is_gestor %}
+            <a href="{{ url_for('main.nuevo_bloque') }}" class="px-4 py-2.5 bg-slate-700 hover:bg-slate-600 text-slate-100 font-semibold text-sm rounded-xl border border-slate-600 flex items-center gap-2 transition-all">
+                <i class="fa-solid fa-plus"></i> Nueva Reserva
+            </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Stats Cards Grid -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        
+        <!-- Total Materias Tecnicaturas -->
+        <div class="bg-slate-800 p-5 rounded-2xl border border-slate-700/80 shadow-lg flex items-center justify-between">
+            <div>
+                <p class="text-xs font-medium text-slate-400 uppercase tracking-wider">Materias Tecnicaturas</p>
+                <h3 class="text-2xl font-bold text-white mt-1">{{ total_materias }}</h3>
+                <p class="text-xs text-blue-400 mt-1">TUASSL (15) y TUDW (13)</p>
+            </div>
+            <div class="w-12 h-12 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 text-xl">
+                <i class="fa-solid fa-book-bookmark"></i>
+            </div>
+        </div>
+
+        <!-- Plantel Docente (PAD / AYP) -->
+        <div class="bg-slate-800 p-5 rounded-2xl border border-slate-700/80 shadow-lg flex items-center justify-between">
+            <div>
+                <p class="text-xs font-medium text-slate-400 uppercase tracking-wider">Plantel Docente</p>
+                <h3 class="text-2xl font-bold text-white mt-1">{{ profesores|length }} Prof.</h3>
+                <p class="text-xs text-indigo-400 mt-1">PAD (Teoría) • AYP (Práctica)</p>
+            </div>
+            <div class="w-12 h-12 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400 text-xl">
+                <i class="fa-solid fa-chalkboard-user"></i>
+            </div>
+        </div>
+
+        <!-- Conflictos de Aulas Físicas -->
+        <div class="bg-slate-800 p-5 rounded-2xl border border-slate-700/80 shadow-lg flex items-center justify-between">
+            <div>
+                <p class="text-xs font-medium text-slate-400 uppercase tracking-wider">Conflictos de Aula</p>
+                <h3 class="text-2xl font-bold {% if reporte.conflictos_aulas %}text-rose-400 animate-pulse{% else %}text-emerald-400{% endif %} mt-1">
+                    {{ reporte.conflictos_aulas|length }}
+                </h3>
+                <p class="text-xs text-slate-400 mt-1">
+                    {% if reporte.conflictos_aulas %}
+                    <span class="text-rose-400 font-bold">⚠️ Solapamientos Físicos</span>
+                    {% else %}
+                    <span class="text-emerald-400 font-semibold">0 Colisiones de Aula</span>
+                    {% endif %}
+                </p>
+            </div>
+            <div class="w-12 h-12 rounded-xl {% if reporte.conflictos_aulas %}bg-rose-500/20 border border-rose-500/40 text-rose-400{% else %}bg-emerald-500/10 border border-emerald-500/20 text-emerald-400{% endif %} flex items-center justify-center text-xl">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+            </div>
+        </div>
+
+        <!-- Conflictos de Docentes -->
+        <div class="bg-slate-800 p-5 rounded-2xl border border-slate-700/80 shadow-lg flex items-center justify-between">
+            <div>
+                <p class="text-xs font-medium text-slate-400 uppercase tracking-wider">Conflictos Docentes</p>
+                <h3 class="text-2xl font-bold {% if reporte.conflictos_docentes %}text-rose-400 animate-pulse{% else %}text-emerald-400{% endif %} mt-1">
+                    {{ reporte.conflictos_docentes|length }}
+                </h3>
+                <p class="text-xs text-slate-400 mt-1">
+                    {% if reporte.conflictos_docentes %}
+                    <span class="text-rose-400 font-bold">⚠️ Profe en 2 materias</span>
+                    {% else %}
+                    <span class="text-emerald-400 font-semibold">0 Solapamientos Prof.</span>
+                    {% endif %}
+                </p>
+            </div>
+            <div class="w-12 h-12 rounded-xl {% if reporte.conflictos_docentes %}bg-rose-500/20 border border-rose-500/40 text-rose-400{% else %}bg-purple-500/10 border border-purple-500/20 text-purple-400{% endif %} flex items-center justify-center text-xl">
+                <i class="fa-solid fa-user-group"></i>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Alert / Audit Report Panel -->
+    <div class="bg-slate-800 rounded-2xl border border-slate-700/80 shadow-xl overflow-hidden">
+        <div class="p-5 border-b border-slate-700 flex items-center justify-between bg-slate-800/60">
+            <div class="flex items-center space-x-3">
+                <div class="w-8 h-8 rounded-lg bg-rose-500/20 text-rose-400 flex items-center justify-center">
+                    <i class="fa-solid fa-shield-halved"></i>
+                </div>
+                <div>
+                    <h3 class="font-bold text-white text-base">Informe de Auditoría de Conflictos y Sincronía</h3>
+                    <p class="text-xs text-slate-400">Verificación automática de colisión de aulas, cruce de profesores (PAD/AYP) y cumplimiento de horas sincrónicas</p>
+                </div>
+            </div>
+            <a href="{{ url_for('main.horarios') }}" class="text-xs text-blue-400 hover:underline font-semibold">Ver Grilla →</a>
+        </div>
+
+        <div class="p-5 space-y-4">
+
+            <!-- PHYSICAL CLASSROOM CONFLICT REPORTING -->
+            {% if reporte.conflictos_aulas %}
+            <div class="p-4 bg-rose-950/80 border-2 border-rose-500/70 rounded-xl space-y-3 shadow-lg shadow-rose-950/50">
+                <div class="flex items-center justify-between text-rose-300 font-extrabold text-sm">
+                    <div class="flex items-center space-x-2">
+                        <i class="fa-solid fa-circle-exclamation text-rose-400 text-lg animate-bounce"></i>
+                        <span>🚨 ALERTA: Solapamientos Físicos de Aulas Detectados ({{ reporte.conflictos_aulas|length }})</span>
+                    </div>
+                    <a href="{{ url_for('main.horarios', solo_conflictos=1) }}" class="px-3 py-1 bg-rose-600 hover:bg-rose-500 text-white rounded-lg text-xs font-bold transition-colors">
+                        Ver en Grilla →
+                    </a>
+                </div>
+
+                <div class="divide-y divide-rose-800/50 text-xs text-rose-100">
+                    {% for conf in reporte.conflictos_aulas %}
+                    <div class="py-2.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                        <div>
+                            <span class="font-mono font-bold text-white bg-rose-900/80 px-2 py-0.5 rounded border border-rose-600">
+                                📍 {{ conf.aula }}
+                            </span>
+                            <span class="font-bold text-rose-200 ml-2">Día {{ conf.dia }}</span>
+                        </div>
+                        <div class="text-rose-200">
+                            • <strong class="text-white">{{ conf.carrera1 }} - {{ conf.materia1 }}</strong> ({{ conf.horario1 }})
+                            <span class="font-bold text-rose-400 px-1">🆚</span>
+                            • <strong class="text-white">{{ conf.carrera2 }} - {{ conf.materia2 }}</strong> ({{ conf.horario2 }})
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- TEACHER CONFLICT REPORTING -->
+            {% if reporte.conflictos_docentes %}
+            <div class="p-4 bg-purple-950/80 border-2 border-purple-500/70 rounded-xl space-y-3 shadow-lg shadow-purple-950/50">
+                <div class="flex items-center justify-between text-purple-200 font-extrabold text-sm">
+                    <div class="flex items-center space-x-2">
+                        <i class="fa-solid fa-user-xmark text-purple-400 text-lg animate-bounce"></i>
+                        <span>🚨 ALERTA: Solapamientos de Profesor/a (Mismo docente en 2 materias simultáneas)</span>
+                    </div>
+                </div>
+
+                <div class="divide-y divide-purple-800/50 text-xs text-purple-100">
+                    {% for cd in reporte.conflictos_docentes %}
+                    <div class="py-2.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                        <div>
+                            <span class="font-bold text-white bg-purple-900/80 px-2 py-0.5 rounded border border-purple-600">
+                                👤 {{ cd.profesor }} ({{ cd.categoria }})
+                            </span>
+                            <span class="font-bold text-purple-200 ml-2">Día {{ cd.dia }}</span>
+                        </div>
+                        <div class="text-purple-200">
+                            • <strong class="text-white">{{ cd.materia1 }}</strong> ({{ cd.horario1 }})
+                            <span class="font-bold text-purple-400 px-1">🆚</span>
+                            • <strong class="text-white">{{ cd.materia2 }}</strong> ({{ cd.horario2 }})
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            {% if not reporte.conflictos_aulas and not reporte.conflictos_docentes %}
+            <div class="p-4 bg-slate-900 border border-slate-700/60 rounded-xl flex items-center space-x-3 text-slate-300 text-xs font-medium">
+                <i class="fa-solid fa-circle-check text-emerald-400 text-base"></i>
+                <span>No se detectaron colisiones de aulas físicas ni solapamientos de profesores.</span>
+            </div>
+            {% endif %}
+
+            <!-- Observaciones de Sincronía -->
+            {% if reporte.incumplen_sincronico %}
+            <div class="p-4 bg-amber-950/40 border border-amber-500/30 rounded-xl space-y-2">
+                <div class="flex items-center space-x-2 text-amber-400 font-semibold text-sm">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                    <span>Materias con Horas Sincrónicas Pendientes de Programación (&le; 50%)</span>
+                </div>
+                <div class="space-y-1 pl-6 text-xs text-amber-200">
+                    {% for inc in reporte.incumplen_sincronico %}
+                    <p>
+                        • <strong class="text-white">{{ inc.carrera }} ({{ inc.anio }}° Año - {{ inc.cuatrimestre }}° Cuatri) - {{ inc.nombre }}</strong>: 
+                        Carga total {{ inc.carga_total }}h. Requiere <span class="font-bold text-amber-300">{{ inc.min_sincronico }}h sincrónicas</span>, actualmente programadas: <span class="font-bold text-amber-300">{{ inc.prog_sincronico }}h</span> (Pendientes: {{ inc.deficit }}h).
+                    </p>
+                    {% endfor %}
+                </div>
+            </div>
+            {% else %}
+            <div class="p-4 bg-emerald-950/40 border border-emerald-500/30 rounded-xl flex items-center space-x-3 text-emerald-300 text-xs font-medium">
+                <i class="fa-solid fa-circle-check text-emerald-400 text-base"></i>
+                <span>¡Excelente! Todas las asignaturas de TUASSL y TUDW programadas cumplen con la regla de más del 50% de horas sincrónicas.</span>
+            </div>
+            {% endif %}
+
+        </div>
+    </div>
+
+</div>
+{% endblock %}
