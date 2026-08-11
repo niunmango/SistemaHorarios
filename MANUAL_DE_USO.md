@@ -40,8 +40,8 @@ Para que el botón **`Google / UNComa`** aparezca activo en la pantalla de inici
      - **Para desarrollo local**: `http://localhost:5000/auth/callback`
      - **Para Render / Servidor**: `https://tu-app.onrender.com/auth/callback`
 
-2. **Configurar Variables de Entorno en el Servidor (Render / Docker)**:
-   Agregue las siguientes dos variables de entorno:
+2. **Configurar Variables de Entorno en el Servidor (Podman Compose / Render)**:
+   Agregue las siguientes dos variables de entorno (`OAUTH_CLIENT_ID` y `OAUTH_CLIENT_SECRET`), ya sea exportándolas en el entorno previo al `podman compose up` o definiéndolas en la pestaña *Environment Variables* de Render:
    - `OAUTH_CLIENT_ID`: `xxxxxx-xxxxxx.apps.googleusercontent.com`
    - `OAUTH_CLIENT_SECRET`: `GOCSPX-xxxxxxxxxxxxxx`
 

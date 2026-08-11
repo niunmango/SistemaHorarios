@@ -8,7 +8,7 @@
     <div class="bg-slate-800 border border-slate-700/80 rounded-2xl shadow-2xl p-6 sm:p-8 space-y-6">
         
         <div>
-            <h1 class="text-2xl font-bold text-white tracking-tight">{% if materia %}Editar Asignatura{% else %}Alta de Nueva Asignatura{% endif %}</h1>
+            <h1 class="text-2xl font-bold text-white tracking-tight">{% if materia %}Editar Materia{% else %}Alta de Nueva Materia{% endif %}</h1>
             <p class="text-slate-400 text-sm mt-1">Defina la carrera, cuatrimestre, carga horaria y docentes (1 PAD + Múltiples AYPs)</p>
         </div>
 
@@ -42,6 +42,15 @@
                 </div>
             </div>
 
+            <!-- Checkbox Externa -->
+            <div class="flex items-center space-x-3">
+                <input type="checkbox" name="es_externa" id="es_externa" value="1"
+                       {% if materia and materia.es_externa %}checked{% endif %}
+                       onchange="toggleExternFields(this.checked)"
+                       class="rounded bg-slate-800 border-slate-600 text-blue-600 focus:ring-blue-500">
+                <label for="es_externa" class="text-sm font-medium text-slate-300">Materia Externa (no aplica regla >50% sincrónico)</label>
+            </div>
+
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div class="sm:col-span-1">
                     <label for="codigo" class="block text-sm font-medium text-slate-300 mb-1">Código</label>
@@ -69,7 +78,7 @@
             </div>
 
             <div>
-                <label for="nombre" class="block text-sm font-medium text-slate-300 mb-1">Nombre de la Asignatura *</label>
+                <label for="nombre" class="block text-sm font-medium text-slate-300 mb-1">Nombre de la Materia *</label>
                 <input type="text" id="nombre" name="nombre" required value="{{ materia.nombre if materia else '' }}"
                        class="w-full px-4 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
                        placeholder="Ej: Programación Web Avanzada">
@@ -125,7 +134,7 @@
                         <h3 class="text-sm font-bold text-white flex items-center gap-2">
                             <i class="fa-solid fa-calendar-days text-blue-400"></i> Clases / Horarios Programados ({{ materia.bloques_horarios|length }})
                         </h3>
-                        <p class="text-xs text-slate-400 mt-0.5">Clases asociadas a esta asignatura precargadas para edición, borrado o creación</p>
+                        <p class="text-xs text-slate-400 mt-0.5">Clases asociadas a esta materia precargadas para edición, borrado o creación</p>
                     </div>
                     <a href="{{ url_for('main.nuevo_bloque', asignatura_id=materia.id) }}" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs rounded-xl shadow transition-all flex items-center gap-1.5">
                         <i class="fa-solid fa-plus"></i> + Crear Clase
@@ -186,7 +195,7 @@
             <div class="flex items-center justify-between pt-4 border-t border-slate-700">
                 <a href="{{ url_for('main.materias') }}" class="px-4 py-2.5 text-slate-400 hover:text-white text-sm font-semibold">Cancelar</a>
                 <button type="submit" class="px-6 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-semibold text-sm rounded-xl shadow-lg transition-all">
-                    Guardar Asignatura
+                    Guardar Materia
                 </button>
             </div>
 
@@ -205,5 +214,24 @@
         document.getElementById('hint_min_sinc').innerText = minSinc;
         document.getElementById('hint_max_pedco').innerText = maxPedco;
     }
+
+    function toggleExternFields(isExtern) {
+        const hint = document.getElementById('hint_sincronico');
+        const cargaInput = document.getElementById('carga_horaria_semanal');
+        if (isExtern) {
+            hint.style.display = 'none';
+            cargaInput.required = false;
+        } else {
+            hint.style.display = 'flex';
+            cargaInput.required = true;
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const cb = document.getElementById('es_externa');
+        if (cb && cb.checked) {
+            toggleExternFields(true);
+        }
+    });
 </script>
 {% endblock %}

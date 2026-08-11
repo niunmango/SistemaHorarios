@@ -9,8 +9,13 @@
     <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-gradient-to-r from-slate-800 via-slate-800 to-blue-950 p-6 rounded-2xl border border-slate-700/80 shadow-xl">
         <div>
             <div class="inline-flex items-center space-x-2 px-3 py-1 bg-blue-500/10 border border-blue-500/20 rounded-full text-xs font-semibold text-blue-400 mb-2">
+                {% if config.congelado %}
+                <span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
+                <span class="text-amber-400">SISTEMA CONGELADO</span>
+                {% else %}
                 <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
                 <span>CURZAS — Departamento de Ciencia y Tecnología</span>
+                {% endif %}
             </div>
             <h1 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">Panel de Control de Horarios, Aulas y Docentes</h1>
             <p class="text-slate-400 text-sm mt-1">Gestión integral para TUASSL y TUDW con control de profesores (PAD/AYP), colisión de aulas y sincronía (>50%).</p>
@@ -20,13 +25,49 @@
             <a href="{{ url_for('main.horarios') }}" class="px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-semibold text-sm rounded-xl shadow-lg shadow-blue-600/30 flex items-center gap-2 transition-all">
                 <i class="fa-solid fa-calendar-days"></i> Ver Grilla Semanal
             </a>
-            {% if current_user.is_gestor %}
+            {% if current_user.is_gestor and not config.congelado %}
             <a href="{{ url_for('main.nuevo_bloque') }}" class="px-4 py-2.5 bg-slate-700 hover:bg-slate-600 text-slate-100 font-semibold text-sm rounded-xl border border-slate-600 flex items-center gap-2 transition-all">
                 <i class="fa-solid fa-plus"></i> Nueva Reserva
             </a>
             {% endif %}
         </div>
     </div>
+
+    <!-- Banner de Estado Congelado -->
+    {% if config.congelado %}
+    <div class="bg-amber-950/60 border border-amber-500/40 rounded-2xl p-5 shadow-xl">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div class="flex items-center gap-3">
+                <div class="w-12 h-12 rounded-xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center">
+                    <i class="fa-solid fa-snowflake text-amber-400 text-xl"></i>
+                </div>
+                <div>
+                    <h3 class="text-lg font-bold text-amber-200">Sistema Congelado</h3>
+                    <p class="text-sm text-amber-300/80">
+                        Motivo: {{ config.motivo_congelacion }}
+                        {% if config.congelado_fecha %} — Desde: {{ config.congelado_fecha.strftime('%d/%m/%Y %H:%M') }}{% endif %}
+                    </p>
+                </div>
+            </div>
+            {% if current_user.is_admin %}
+            <form method="POST" action="{{ url_for('main.descongelar_sistema') }}" class="inline">
+                <button type="submit" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm rounded-xl shadow-lg shadow-emerald-600/30 flex items-center gap-2 transition-all">
+                    <i class="fa-solid fa-unlock"></i> DESCONGELAR SISTEMA
+                </button>
+            </form>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Botón Congelar (solo admin, solo si no está congelado) -->
+    {% if current_user.is_admin and not config.congelado %}
+    <div class="flex justify-end">
+        <button onclick="document.getElementById('modal_congelar').classList.remove('hidden')" class="px-5 py-2.5 bg-amber-600 hover:bg-amber-500 text-white font-bold text-sm rounded-xl shadow-lg shadow-amber-600/30 flex items-center gap-2 transition-all">
+            <i class="fa-solid fa-snowflake"></i> CONGELAR SISTEMA
+        </button>
+    </div>
+    {% endif %}
 
     <!-- Stats Cards Grid -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -211,4 +252,51 @@
     </div>
 
 </div>
+
+<!-- Modal de Confirmación para Congelar Sistema -->
+{% if current_user.is_admin and not config.congelado %}
+<div id="modal_congelar" class="hidden fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-slate-800 border border-slate-700 rounded-2xl shadow-2xl p-6 sm:p-8 w-full max-w-md space-y-5">
+        <div class="flex items-center gap-3">
+            <div class="w-12 h-12 rounded-xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center">
+                <i class="fa-solid fa-snowflake text-amber-400 text-xl"></i>
+            </div>
+            <div>
+                <h3 class="text-lg font-bold text-white">Congelar Sistema</h3>
+                <p class="text-xs text-slate-400">Esta acción bloqueará todos los cambios</p>
+            </div>
+        </div>
+        
+        <div class="bg-amber-950/40 border border-amber-500/30 rounded-xl p-4 text-xs text-amber-200">
+            <p class="font-semibold mb-1">Al congelar el sistema:</p>
+            <ul class="list-disc list-inside space-y-0.5">
+                <li>No se podrán crear, editar ni eliminar bloques/clases</li>
+                <li>No se podrán crear, editar ni eliminar materias</li>
+                <li>No se podrán crear, editar ni eliminar profesores</li>
+                <li>El drag & drop de horarios quedará deshabilitado</li>
+            </ul>
+        </div>
+
+        <form method="POST" action="{{ url_for('main.congelar_sistema') }}" class="space-y-4">
+            <div>
+                <label for="motivo" class="block text-sm font-medium text-slate-300 mb-1">Motivo de congelación</label>
+                <input type="text" id="motivo" name="motivo" required
+                       placeholder="Ej: Horarios oficiales confirmados para el cuatrimestre"
+                       class="w-full px-4 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white focus:ring-2 focus:ring-amber-500 focus:outline-none">
+            </div>
+            
+            <div class="flex items-center justify-between pt-3 border-t border-slate-700">
+                <button type="button" onclick="document.getElementById('modal_congelar').classList.add('hidden')" 
+                        class="px-4 py-2.5 text-slate-400 hover:text-white text-sm font-semibold">
+                    Cancelar
+                </button>
+                <button type="submit" 
+                        class="px-6 py-2.5 bg-amber-600 hover:bg-amber-500 text-white font-bold text-sm rounded-xl shadow-lg shadow-amber-600/30 flex items-center gap-2 transition-all">
+                    <i class="fa-solid fa-snowflake"></i> CONGELAR SISTEMA
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endif %}
 {% endblock %}

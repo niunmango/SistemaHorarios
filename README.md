@@ -59,11 +59,11 @@ Por defecto, la interfaz del sistema permite ingresar con usuario y contraseña 
 
 ## 🛠️ Tecnología e Infraestructura
 
-- **Backend**: Python 3.12, Flask, Flask-SQLAlchemy 3.1, Flask-Login, Authlib (OAuth 2.0), Werkzeug.
-- **Base de Datos**: SQLite3 / PostgreSQL compatible (ORM SQLAlchemy 2.0).
+- **Backend**: Python 3.12, Flask, Flask-SQLAlchemy 3.1, Flask-Login, Authlib (OAuth 2.0), Werkzeug, PyMySQL.
+- **Base de Datos**: **MariaDB** (externo, vía contenedor Podman) con compatibilidad MySQL 8. En desarrollo local se puede usar SQLite3 (ORM SQLAlchemy 2.0).
 - **Frontend**: HTML5 Drag & Drop API, Tailwind CSS, FontAwesome 6, JavaScript Vanilla.
 - **Testing**: Suite nativa de `unittest` con 100% de éxito en verificación de reglas.
-- **Contenedores**: Archivo `Containerfile` multi-etapa compatible con Podman y Docker.
+- **Contenedores**: `Containerfile` multi-etapa + `compose.yaml` compatible con **Podman Compose** y Docker Compose.
 - **CI/CD**: GitHub Actions Pipeline en `.github/workflows/ci-cd.yml`.
 
 ---
@@ -89,6 +89,13 @@ python3 run.py
 ```
 Acceda desde el navegador a: `http://localhost:5000`
 
+> **Base de datos en desarrollo local**: por defecto se usa un archivo **SQLite** en `instance/sistema_horarios.db`. Para apuntar a un **MariaDB externo**, exporte la variable `DATABASE_URL` antes de arrancar:
+> ```bash
+> export DATABASE_URL="mysql+pymysql://usuario:clave@localhost:3306/sistema_horarios?charset=utf8mb4"
+> python3 run.py
+> ```
+> Al arrancar, la aplicación crea las tablas automáticamente (`db.create_all()`) y, si la base está vacía, **puebla los datos de seed por primera vez** (ver sección *Importación de Datos de Seed*).
+
 ---
 
 ## 🧪 Ejecución de Pruebas Automatizadas (Unit Tests)
@@ -100,28 +107,84 @@ python3 tests/test_rules_unittest.py
 
 ---
 
-## 🦭 Guía Completa de Despliegue en Render.com o Podman
+## 🦭 Guía de Despliegue (Podman Compose con MariaDB externo)
+
+El archivo **`compose.yaml`** define dos servicios: un contenedor **MariaDB** (base de datos externa, persistida en el volumen `mariadb_data`) y el contenedor de la **aplicación Flask** (imagen construida desde el `Containerfile`). La aplicación se conecta a la base de datos mediante el driver **PyMySQL** usando la variable `DATABASE_URL`.
+
+> **Sobre la red entre contenedores**: la base de datos usa una **IP estática** (`DB_IP`) dentro de la red del compose. Esto permite que la aplicación llegue a MariaDB incluso cuando Podman usa el backend **CNI sin el plugin `dnsname`** (caso en el que los contenedores no se resuelven entre sí por nombre). Si su instalación de Podman resuelve nombres (netavark + aardvark) o usa Docker, puede cambiar `DATABASE_URL` al nombre de servicio `db` y quitar la IP estática del archivo `compose.yaml`.
+
+### Despliegue con Podman Compose
+```bash
+# Levantar todo (construye la imagen y crea MariaDB + la app)
+podman-compose up -d --build
+
+# En sistemas con "podman compose" también funciona:
+#   podman compose up -d --build
+
+# Verificar el estado de los servicios
+podman-compose ps
+
+# Ver los logs de la aplicación
+podman-compose logs -f app
+
+# Acceder a la aplicación
+#   http://localhost:5000
+```
+
+La aplicación espera activamente a que MariaDB esté lista al arrancar (reintentos de conexión) y crea automáticamente las tablas, por lo que no es necesario ordenar el arranque de forma manual.
+
+### Configuración de variables de entorno
+Los valores por defecto se pueden sobrescribir exportando variables en el entorno previo al `podman-compose up`:
+
+| Variable | Uso | Valor por defecto |
+| :--- | :--- | :--- |
+| `MARIADB_DATABASE` | Nombre de la base de datos | `sistema_horarios` |
+| `MARIADB_USER` | Usuario de la base de datos | `horarios` |
+| `MARIADB_PASSWORD` | Clave del usuario de la app | `horarios_secreto` |
+| `MARIADB_ROOT_PASSWORD` | Clave del usuario root de MariaDB | `cambiar_clave_root` |
+| `DB_SUBNET` | Subred de la red del compose | `172.30.0.0/24` |
+| `DB_IP` | IP estática del contenedor de MariaDB | `172.30.0.10` |
+| `DB_PORT` | Puerto del host para acceder a MariaDB | `3306` |
+| `APP_PORT` | Puerto del host para acceder a la aplicación | `5000` |
+| `SECRET_KEY` | Clave de firma de sesiones de Flask | `cambiar-clave-secreta-curzas-2026` |
+| `OAUTH_CLIENT_ID` | ID de cliente de Google OAuth 2.0 | *(vacío)* |
+| `OAUTH_CLIENT_SECRET` | Secreto de cliente de Google OAuth 2.0 | *(vacío)* |
+
+> **Importante**: antes de desplegar en producción cambie `SECRET_KEY`, `MARIADB_PASSWORD` y `MARIADB_ROOT_PASSWORD`.
 
 ### Despliegue en Render.com
 1. Cree un servicio **Web Service** conectado a su repositorio de GitHub.
 2. Render utilizará automáticamente el `Containerfile` e iniciará la aplicación con Gunicorn.
-3. En la pestaña **Environment Variables** de Render, agregue (opcional):
-   - `OAUTH_CLIENT_ID`: Su ID de cliente de Google OAuth.
-   - `OAUTH_CLIENT_SECRET`: Su Secreto de cliente de Google OAuth.
+3. En la pestaña **Environment Variables** agregue al menos:
+   - `DATABASE_URL`: la cadena de conexión a un **MariaDB/MySQL externo**, por ejemplo `mysql+pymysql://usuario:clave@host:3306/sistema_horarios?charset=utf8mb4`.
+   - `SECRET_KEY`, `OAUTH_CLIENT_ID` y `OAUTH_CLIENT_SECRET` (opcional).
 
-### Despliegue local con Podman / Docker
+---
+
+## 🌱 Importación de Datos de Seed
+
+Los datos de ejemplo (usuarios de demo, plantel docente, carreras, aulas, asignaturas y horarios oficiales TUASSL/TUDW) se importan automáticamente **la primera vez** que la aplicación arranca con una base de datos vacía (tabla `users` sin registros), tanto en SQLite local como en MariaDB.
+
+### Sembrado automático al primer arranque
 ```bash
-# Construir imagen
-podman build -t sistema-horarios-curzas -f Containerfile .
+podman-compose up -d --build
+podman-compose logs -f app    # verá el mensaje "🌱 Inicializando datos base del CURZAS..."
+```
 
-# Ejecutar contenedor
-podman run -d \
-  --name sistema_horarios_app \
-  -p 5000:5000 \
-  -v ./instance:/app/instance:Z \
-  -e OAUTH_CLIENT_ID="tu-client-id" \
-  -e OAUTH_CLIENT_SECRET="tu-client-secret" \
-  sistema-horarios-curzas
+### Re-sembrado manual (restablecer la base de datos)
+Para **borrar y volver a poblar** toda la base de datos (destructivo: elimina todos los datos actuales):
+
+```bash
+podman-compose exec app python -m app.seed
+```
+
+> Equivalente en desarrollo local: `python -m app.seed`. El seed ejecuta `seed_database()`, que hace `db.drop_all()` + `db.create_all()` y vuelve a insertar todos los registros.
+
+### Conectar a MariaDB desde fuera (cliente SQL)
+Con el servicio desplegado, la base queda accesible en el host en el puerto configurado (`DB_PORT`, por defecto `3306`) con el usuario `MARIADB_USER`:
+
+```bash
+mariadb -h localhost -P 3306 -u horarios -p sistema_horarios
 ```
 
 ---
@@ -172,7 +235,8 @@ SistemaHorarios/
 │   └── workflows/
 │       └── ci-cd.yml          # GitHub Actions CI/CD pipeline
 ├── Containerfile             # Multi-stage build Podman/Docker
-├── requirements.txt          # Dependencias de Python (Authlib, Flask, etc.)
+├── compose.yaml              # Despliegue con Podman Compose (MariaDB + app)
+├── requirements.txt          # Dependencias de Python (Authlib, Flask, PyMySQL, etc.)
 ├── LICENSE                   # Licencia GNU General Public License v3.0 (GPLv3)
 ├── MANUAL_DE_USO.md          # Manual de Usuario detallado
 ├── README.md                 # Documentación principal del proyecto

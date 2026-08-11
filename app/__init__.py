@@ -1,5 +1,6 @@
 import os
 import threading
+import time
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
@@ -9,6 +10,19 @@ db = SQLAlchemy()
 login_manager = LoginManager()
 oauth = OAuth()
 _db_init_lock = threading.Lock()
+
+def _wait_for_db(app, attempts=30, delay=2):
+    """Espera hasta que la base de datos esté disponible (útil al arrancar con MariaDB vía Podman Compose)."""
+    from sqlalchemy import text
+    for i in range(attempts):
+        try:
+            with db.engine.connect() as conn:
+                conn.execute(text('SELECT 1'))
+            return True
+        except Exception:
+            if i < attempts - 1:
+                time.sleep(delay)
+    return False
 
 def create_app(test_config=None):
     app = Flask(__name__, instance_relative_config=True)
@@ -56,17 +70,35 @@ def create_app(test_config=None):
     app.register_blueprint(auth_bp)
     app.register_blueprint(main_bp)
 
+    @app.context_processor
+    def inject_system_config():
+        try:
+            from app.models import ConfiguracionSistema
+            config = ConfiguracionSistema.get_config()
+            return dict(config=config)
+        except Exception:
+            return dict(config=None)
+
     with app.app_context():
         with _db_init_lock:
-            try:
-                db.create_all()
-            except Exception:
-                pass
+            if not _wait_for_db(app):
+                raise RuntimeError('No se pudo conectar a la base de datos después de varios intentos.')
+
+            db.create_all()
 
             try:
                 if not app.config.get('TESTING') and User.query.count() == 0:
                     from app.seed import seed_database
                     seed_database()
+            except Exception:
+                pass
+
+            try:
+                from app.models import ConfiguracionSistema
+                if ConfiguracionSistema.query.count() == 0:
+                    config = ConfiguracionSistema(congelado=False)
+                    db.session.add(config)
+                    db.session.commit()
             except Exception:
                 pass
 

@@ -2,7 +2,7 @@ from datetime import datetime, time
 from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify
 from flask_login import login_required, current_user
 from app import db
-from app.models import User, Carrera, Asignatura, EspacioFisico, BloqueHorario, Profesor, DIAS_SEMANA, MODALIDADES, TIPOS_CLASE
+from app.models import User, Carrera, Asignatura, EspacioFisico, BloqueHorario, Profesor, ConfiguracionSistema, DIAS_SEMANA, MODALIDADES, TIPOS_CLASE
 from app.rules import auditar_sistema_completo, validar_bloque_nuevo, calcular_minimo_sincronico, obtener_ids_bloques_en_conflicto, obtener_mapa_explicacion_conflictos
 
 main_bp = Blueprint('main', __name__)
@@ -10,6 +10,8 @@ main_bp = Blueprint('main', __name__)
 @main_bp.route('/')
 def index():
     if current_user.is_authenticated:
+        if current_user.is_alumno:
+            return redirect(url_for('main.horarios'))
         return redirect(url_for('main.dashboard'))
     return redirect(url_for('main.horarios'))
 
@@ -17,6 +19,9 @@ def index():
 @main_bp.route('/dashboard')
 @login_required
 def dashboard():
+    if current_user.is_alumno:
+        flash('No tienes permisos para acceder al dashboard.', 'danger')
+        return redirect(url_for('main.horarios'))
     reporte = auditar_sistema_completo()
     total_carreras = Carrera.query.filter(Carrera.codigo != 'EXTERNA').count()
     total_materias = Asignatura.query.filter_by(es_externa=False).count()
@@ -26,6 +31,7 @@ def dashboard():
     carreras = Carrera.query.filter(Carrera.codigo != 'EXTERNA').all()
     aulas = EspacioFisico.query.all()
     profesores = Profesor.query.all()
+    config = ConfiguracionSistema.get_config()
 
     return render_template('dashboard.html',
                            reporte=reporte,
@@ -35,7 +41,8 @@ def dashboard():
                            total_bloques=total_bloques,
                            carreras=carreras,
                            aulas=aulas,
-                           profesores=profesores)
+                           profesores=profesores,
+                           config=config)
 
 
 # VISTA DE HORARIOS: PÚBLICA PARA ALUMNOS & INTERACTIVA PARA DOCENTES/GESTORES
@@ -107,6 +114,9 @@ def horarios():
 @main_bp.route('/api/bloque/<int:id>/mover', methods=['POST'])
 @login_required
 def api_mover_bloque(id):
+    if ConfiguracionSistema.esta_congelado():
+        return jsonify({'success': False, 'error': 'El sistema está congelado. No se permiten cambios.'}), 403
+    
     bloque = db.session.get(BloqueHorario, id)
     if not bloque:
         return jsonify({'success': False, 'error': 'Bloque de clase no encontrado.'}), 404
@@ -168,6 +178,9 @@ def api_mover_bloque(id):
 @main_bp.route('/profesores')
 @login_required
 def profesores():
+    if current_user.is_alumno:
+        flash('No tienes permisos para acceder a profesores.', 'danger')
+        return redirect(url_for('main.horarios'))
     lista_profesores = Profesor.query.order_by(Profesor.nombre_completo).all()
     return render_template('profesores.html', profesores=lista_profesores)
 
@@ -177,6 +190,10 @@ def profesores():
 def nuevo_profesor():
     if not current_user.is_gestor:
         flash('No tienes permisos para dar de alta profesores.', 'danger')
+        return redirect(url_for('main.profesores'))
+    
+    if ConfiguracionSistema.esta_congelado():
+        flash('El sistema está congelado. No se permiten cambios.', 'warning')
         return redirect(url_for('main.profesores'))
 
     if request.method == 'POST':
@@ -204,6 +221,10 @@ def editar_profesor(id):
     if not current_user.is_gestor:
         flash('No tienes permisos para editar profesores.', 'danger')
         return redirect(url_for('main.profesores'))
+    
+    if ConfiguracionSistema.esta_congelado():
+        flash('El sistema está congelado. No se permiten cambios.', 'warning')
+        return redirect(url_for('main.profesores'))
 
     prof = db.session.get(Profesor, id)
     if not prof:
@@ -228,6 +249,10 @@ def eliminar_profesor(id):
     if not current_user.is_gestor:
         flash('No tienes permisos para eliminar profesores.', 'danger')
         return redirect(url_for('main.profesores'))
+    
+    if ConfiguracionSistema.esta_congelado():
+        flash('El sistema está congelado. No se permiten cambios.', 'warning')
+        return redirect(url_for('main.profesores'))
 
     prof = db.session.get(Profesor, id)
     if prof:
@@ -241,10 +266,19 @@ def eliminar_profesor(id):
 @main_bp.route('/materias')
 @login_required
 def materias():
+    if current_user.is_alumno:
+        flash('No tienes permisos para acceder a materias.', 'danger')
+        return redirect(url_for('main.horarios'))
     carrera_id = request.args.get('carrera_id', type=int)
     cuatrimestre = request.args.get('cuatrimestre', type=int)
+    solo_externas = request.args.get('externas', type=int)
 
-    query = Asignatura.query.filter_by(es_externa=False)
+    query = Asignatura.query
+    if solo_externas:
+        query = query.filter_by(es_externa=True)
+    else:
+        query = query.filter_by(es_externa=False)
+
     if carrera_id:
         query = query.filter_by(carrera_id=carrera_id)
     if cuatrimestre:
@@ -261,6 +295,7 @@ def materias():
                            carreras=carreras,
                            carrera_id=carrera_id,
                            cuatrimestre=cuatrimestre,
+                           solo_externas=solo_externas,
                            reporte=reporte)
 
 
@@ -270,8 +305,12 @@ def nueva_materia():
     if not current_user.is_gestor:
         flash('No tienes permisos para crear materias.', 'danger')
         return redirect(url_for('main.materias'))
+    
+    if ConfiguracionSistema.esta_congelado():
+        flash('El sistema está congelado. No se permiten cambios.', 'warning')
+        return redirect(url_for('main.materias'))
 
-    carreras = Carrera.query.filter(Carrera.codigo != 'EXTERNA').all()
+    carreras = Carrera.query.all()
     profesores = Profesor.query.order_by(Profesor.nombre_completo).all()
 
     if request.method == 'POST':
@@ -280,9 +319,10 @@ def nueva_materia():
         nombre = request.form.get('nombre', '').strip()
         anio_cursada = request.form.get('anio_cursada', type=int, default=1)
         cuatrimestre = request.form.get('cuatrimestre', type=int, default=1)
-        carga_horaria_semanal = request.form.get('carga_horaria_semanal', type=int, default=4)
+        carga_horaria_semanal = request.form.get('carga_horaria_semanal', type=int, default=8)
         profesor_pad_id = request.form.get('profesor_pad_id', type=int) or None
         ayps_selected = request.form.getlist('profesores_ayp_ids', type=int)
+        es_externa = request.form.get('es_externa') == '1'
 
         if not carrera_id or not codigo or not nombre:
             flash('Por favor complete los campos requeridos.', 'warning')
@@ -295,7 +335,8 @@ def nueva_materia():
             anio_cursada=anio_cursada,
             cuatrimestre=cuatrimestre,
             carga_horaria_semanal=carga_horaria_semanal,
-            profesor_pad_id=profesor_pad_id
+            profesor_pad_id=profesor_pad_id,
+            es_externa=es_externa
         )
 
         if ayps_selected:
@@ -316,13 +357,17 @@ def editar_materia(id):
     if not current_user.is_gestor:
         flash('No tienes permisos para editar materias.', 'danger')
         return redirect(url_for('main.materias'))
+    
+    if ConfiguracionSistema.esta_congelado():
+        flash('El sistema está congelado. No se permiten cambios.', 'warning')
+        return redirect(url_for('main.materias'))
 
     asig = db.session.get(Asignatura, id)
     if not asig:
         flash('Materia no encontrada.', 'danger')
         return redirect(url_for('main.materias'))
 
-    carreras = Carrera.query.filter(Carrera.codigo != 'EXTERNA').all()
+    carreras = Carrera.query.all()
     profesores = Profesor.query.order_by(Profesor.nombre_completo).all()
 
     if request.method == 'POST':
@@ -333,6 +378,7 @@ def editar_materia(id):
         asig.cuatrimestre = request.form.get('cuatrimestre', type=int, default=1)
         asig.carga_horaria_semanal = request.form.get('carga_horaria_semanal', type=int, default=4)
         asig.profesor_pad_id = request.form.get('profesor_pad_id', type=int) or None
+        asig.es_externa = request.form.get('es_externa') == '1'
 
         ayps_selected = request.form.getlist('profesores_ayp_ids', type=int)
         asig.profesores_ayp = Profesor.query.filter(Profesor.id.in_(ayps_selected)).all() if ayps_selected else []
@@ -361,6 +407,10 @@ def materia_clases(id):
 def nuevo_bloque():
     if not current_user.is_gestor:
         flash('No tienes permisos para programar nuevas clases.', 'danger')
+        return redirect(url_for('main.horarios'))
+
+    if ConfiguracionSistema.esta_congelado():
+        flash('El sistema está congelado. No se permiten cambios.', 'warning')
         return redirect(url_for('main.horarios'))
 
     asignaturas = Asignatura.query.order_by(Asignatura.nombre).all()
@@ -430,6 +480,10 @@ def nuevo_bloque():
 @main_bp.route('/bloques/<int:id>/editar', methods=['GET', 'POST'])
 @login_required
 def editar_bloque(id):
+    if ConfiguracionSistema.esta_congelado():
+        flash('El sistema está congelado. No se permiten cambios.', 'warning')
+        return redirect(url_for('main.horarios'))
+    
     bloque = db.session.get(BloqueHorario, id)
     if not bloque:
         flash('Bloque de clase no encontrado.', 'danger')
@@ -494,6 +548,10 @@ def editar_bloque(id):
 @main_bp.route('/bloques/<int:id>/eliminar', methods=['POST'])
 @login_required
 def eliminar_bloque(id):
+    if ConfiguracionSistema.esta_congelado():
+        flash('El sistema está congelado. No se permiten cambios.', 'warning')
+        return redirect(url_for('main.horarios'))
+    
     bloque = db.session.get(BloqueHorario, id)
     if bloque and current_user.puede_editar_bloque(bloque):
         db.session.delete(bloque)
@@ -509,7 +567,11 @@ def aulas():
 
 
 @main_bp.route('/bloqueos_externos')
+@login_required
 def bloqueos_externos():
+    if current_user.is_alumno:
+        flash('No tienes permisos para acceder a bloqueos externos.', 'danger')
+        return redirect(url_for('main.horarios'))
     bloqueos = BloqueHorario.query.filter(
         (BloqueHorario.es_bloqueo_externo == True) | (BloqueHorario.asignatura.has(es_externa=True))
     ).order_by(BloqueHorario.dia_semana, BloqueHorario.hora_inicio).all()
@@ -620,3 +682,41 @@ def eliminar_usuario(id):
         flash(f'Usuario "{usuario.username}" eliminado con éxito.', 'success')
 
     return redirect(url_for('main.usuarios'))
+
+
+@main_bp.route('/sistema/congelar', methods=['POST'])
+@login_required
+def congelar_sistema():
+    if not current_user.is_admin:
+        flash('Solo los administradores pueden congelar el sistema.', 'danger')
+        return redirect(url_for('main.dashboard'))
+    
+    config = ConfiguracionSistema.get_config()
+    motivo = request.form.get('motivo', '').strip()
+    
+    config.congelado = True
+    config.motivo_congelacion = motivo if motivo else 'Sin motivo especificado'
+    config.congelado_por = current_user.id
+    config.congelado_fecha = datetime.utcnow()
+    db.session.commit()
+    
+    flash('Sistema CONGELADO. No se permiten cambios hasta que un administrador lo descongele.', 'warning')
+    return redirect(url_for('main.dashboard'))
+
+
+@main_bp.route('/sistema/descongelar', methods=['POST'])
+@login_required
+def descongelar_sistema():
+    if not current_user.is_admin:
+        flash('Solo los administradores pueden descongelar el sistema.', 'danger')
+        return redirect(url_for('main.dashboard'))
+    
+    config = ConfiguracionSistema.get_config()
+    config.congelado = False
+    config.motivo_congelacion = None
+    config.congelado_por = None
+    config.congelado_fecha = None
+    db.session.commit()
+    
+    flash('Sistema DESCONGELADO. Ahora se permiten cambios nuevamente.', 'success')
+    return redirect(url_for('main.dashboard'))

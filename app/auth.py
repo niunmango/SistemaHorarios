@@ -10,7 +10,7 @@ auth_bp = Blueprint('auth', __name__)
 @auth_bp.route('/login', methods=['GET', 'POST'])
 def login():
     if current_user.is_authenticated:
-        return redirect(url_for('main.dashboard'))
+        return redirect(url_for('main.horarios' if current_user.is_alumno else 'main.dashboard'))
 
     if request.method == 'POST':
         username = request.form.get('username', '').strip()
@@ -25,7 +25,7 @@ def login():
         login_user(user, remember=remember_me)
         next_page = request.args.get('next')
         if not next_page or urlparse(next_page).netloc != '':
-            next_page = url_for('main.dashboard')
+            next_page = url_for('main.horarios' if user.is_alumno else 'main.dashboard')
 
         flash(f'¡Bienvenido/a, {user.nombre_completo}!', 'success')
         return redirect(next_page)
@@ -37,7 +37,7 @@ def login():
 @auth_bp.route('/login/oauth')
 def login_oauth():
     if current_user.is_authenticated:
-        return redirect(url_for('main.dashboard'))
+        return redirect(url_for('main.horarios' if current_user.is_alumno else 'main.dashboard'))
 
     if hasattr(oauth, 'google') and current_app.config.get('OAUTH_CLIENT_ID'):
         redirect_uri = url_for('auth.auth_callback', _external=True)
@@ -95,7 +95,7 @@ def auth_callback():
 
     login_user(user)
     flash(f'¡Autenticación OAuth 2.0 exitosa! Bienvenido/a {user.nombre_completo}.', 'success')
-    return redirect(url_for('main.dashboard'))
+    return redirect(url_for('main.horarios' if user.is_alumno else 'main.dashboard'))
 
 
 @auth_bp.route('/logout')
@@ -109,7 +109,7 @@ def logout():
 @auth_bp.route('/register', methods=['GET', 'POST'])
 def register():
     if current_user.is_authenticated:
-        return redirect(url_for('main.dashboard'))
+        return redirect(url_for('main.horarios' if current_user.is_alumno else 'main.dashboard'))
 
     if request.method == 'POST':
         username = request.form.get('username', '').strip()

@@ -1,0 +1,69 @@
+# Despliegue completo con Podman Compose: MariaDB externo + aplicación Flask
+#
+# Uso:
+#   podman-compose up -d --build     # (o: podman compose up -d --build)
+#   podman-compose ps                # ver estado de los servicios
+#   podman-compose logs -f app       # ver logs de la aplicación
+#   podman-compose down              # detener (conserva el volumen de la BD)
+#   podman-compose down -v           # detener y eliminar el volumen de la BD
+#
+# Nota sobre red: el servicio "db" usa una IP estática dentro de la red del
+# compose (DB_IP). Esto garantiza que la aplicación pueda conectar a MariaDB
+# incluso en equipos donde Podman usa el backend CNI sin el plugin "dnsname"
+# (resolución de nombres de contenedores deshabilitada). Si su Podman resuelve
+# nombres de contenedores (netavark/aardvark o Docker), puede usar el nombre
+# del servicio "db" en DATABASE_URL y omitir la IP estática.
+#
+# Variables de entorno configurables (exportar antes de "up"):
+#   MARIADB_DATABASE, MARIADB_USER, MARIADB_PASSWORD, MARIADB_ROOT_PASSWORD,
+#   DB_SUBNET, DB_IP, APP_PORT, SECRET_KEY, OAUTH_CLIENT_ID, OAUTH_CLIENT_SECRET
+
+services:
+  db:
+    image: docker.io/library/mariadb:11.4
+    container_name: sistema_horarios_db
+    restart: unless-stopped
+    environment:
+      MARIADB_DATABASE: ${MARIADB_DATABASE:-sistema_horarios}
+      MARIADB_USER: ${MARIADB_USER:-horarios}
+      MARIADB_PASSWORD: ${MARIADB_PASSWORD:-horarios_secreto}
+      MARIADB_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD:-cambiar_clave_root}
+    ports:
+      - "${DB_PORT:-3306}:3306"
+    volumes:
+      - mariadb_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    networks:
+      default:
+        ipv4_address: ${DB_IP:-172.30.0.10}
+
+  app:
+    build:
+      context: .
+      dockerfile: Containerfile
+    container_name: sistema_horarios_app
+    restart: unless-stopped
+    ports:
+      - "${APP_PORT:-5000}:5000"
+    environment:
+      SECRET_KEY: ${SECRET_KEY:-cambiar-clave-secreta-curzas-2026}
+      DATABASE_URL: mysql+pymysql://${MARIADB_USER:-horarios}:${MARIADB_PASSWORD:-horarios_secreto}@${DB_IP:-172.30.0.10}:3306/${MARIADB_DATABASE:-sistema_horarios}?charset=utf8mb4
+      OAUTH_CLIENT_ID: ${OAUTH_CLIENT_ID:-}
+      OAUTH_CLIENT_SECRET: ${OAUTH_CLIENT_SECRET:-}
+    depends_on:
+      - db
+
+networks:
+  default:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: ${DB_SUBNET:-172.30.0.0/24}
+
+volumes:
+  mariadb_data:

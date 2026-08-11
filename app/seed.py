@@ -1,10 +1,15 @@
 from datetime import time
 from app import db
-from app.models import User, Carrera, Asignatura, EspacioFisico, BloqueHorario, Profesor
+from app.models import User, Carrera, Asignatura, EspacioFisico, BloqueHorario, Profesor, ConfiguracionSistema
 
 def seed_database():
     """Puebla la base de datos con los usuarios base, plantilla docente completa y los horarios oficiales del 1er y 2do cuatrimestres para TUASSL y TUDW."""
     
+    # Libera transacciones/sesiones previas para no bloquear el DROP TABLE
+    # (en MariaDB/MySQL una transacción abierta retiene el metadata lock).
+    db.session.rollback()
+    db.session.remove()
+
     db.drop_all()
     db.create_all()
 
@@ -273,5 +278,16 @@ def seed_database():
     
     db.session.add_all([b_ext1, b_ext2, b_ext3, b_ext4, b_ext5])
 
+    # Configuración inicial del sistema (descongelado por defecto)
+    config = ConfiguracionSistema(congelado=False)
+    db.session.add(config)
+
     db.session.commit()
     print("✅ Base de datos poblada exitosamente con planes y horarios de 1er y 2do cuatrimestres.")
+
+
+if __name__ == '__main__':
+    from app import app as flask_app
+    with flask_app.app_context():
+        seed_database()
+        print("🌱 Seed ejecutado. Usuarios de demo: admin/admin123, gestor/gestor123, docente/docente123, alumno/alumno123.")

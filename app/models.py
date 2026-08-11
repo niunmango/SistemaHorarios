@@ -4,6 +4,30 @@ from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
 from app import db
 
+class ConfiguracionSistema(db.Model):
+    __tablename__ = 'configuracion_sistema'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    congelado = db.Column(db.Boolean, nullable=False, default=False)
+    motivo_congelacion = db.Column(db.String(250), nullable=True)
+    congelado_por = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+    congelado_fecha = db.Column(db.DateTime, nullable=True)
+    actualizado_fecha = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    @staticmethod
+    def get_config():
+        config = ConfiguracionSistema.query.first()
+        if not config:
+            config = ConfiguracionSistema(congelado=False)
+            db.session.add(config)
+            db.session.commit()
+        return config
+
+    @staticmethod
+    def esta_congelado():
+        return ConfiguracionSistema.get_config().congelado
+
+
 class User(UserMixin, db.Model):
     __tablename__ = 'users'
     
@@ -37,6 +61,10 @@ class User(UserMixin, db.Model):
     @property
     def is_docente(self):
         return self.role in ['admin', 'gestor_aulas', 'docente']
+
+    @property
+    def is_alumno(self):
+        return self.role == 'alumno'
 
     def puede_editar_bloque(self, bloque):
         if self.is_gestor:

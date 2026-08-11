@@ -116,6 +116,14 @@
                 <!-- Navigation links for authenticated & unauthenticated visitors -->
                 <nav class="flex items-center space-x-1 sm:space-x-2">
                     {% if current_user.is_authenticated %}
+                        {% if current_user.is_alumno %}
+                        <a href="{{ url_for('main.horarios') }}" class="px-3 py-2 rounded-lg text-sm font-medium transition-colors {% if request.endpoint == 'main.horarios' %}bg-blue-600/30 text-blue-400 border border-blue-500/30{% else %}text-slate-300 hover:bg-slate-700/50 hover:text-white{% endif %}">
+                            <i class="fa-solid fa-calendar-days mr-1.5"></i> Horarios
+                        </a>
+                        <a href="{{ url_for('main.aulas') }}" class="px-3 py-2 rounded-lg text-sm font-medium transition-colors {% if request.endpoint == 'main.aulas' %}bg-blue-600/30 text-blue-400 border border-blue-500/30{% else %}text-slate-300 hover:bg-slate-700/50 hover:text-white{% endif %}">
+                            <i class="fa-solid fa-door-open mr-1.5"></i> Aulas
+                        </a>
+                        {% else %}
                         <a href="{{ url_for('main.dashboard') }}" class="px-3 py-2 rounded-lg text-sm font-medium transition-colors {% if request.endpoint == 'main.dashboard' %}bg-blue-600/30 text-blue-400 border border-blue-500/30{% else %}text-slate-300 hover:bg-slate-700/50 hover:text-white{% endif %}">
                             <i class="fa-solid fa-chart-pie mr-1.5"></i> Dashboard
                         </a>
@@ -138,6 +146,7 @@
                         <a href="{{ url_for('main.usuarios') }}" class="px-3 py-2 rounded-lg text-sm font-medium transition-colors {% if request.endpoint == 'main.usuarios' %}bg-blue-600/30 text-blue-400 border border-blue-500/30{% else %}text-slate-300 hover:bg-slate-700/50 hover:text-white{% endif %}">
                             <i class="fa-solid fa-users mr-1.5"></i> Usuarios
                         </a>
+                        {% endif %}
                         {% endif %}
                     {% else %}
                         <!-- Public links for unauthenticated students -->
@@ -192,6 +201,21 @@
         {% endif %}
         {% endwith %}
     </div>
+
+    <!-- Banner Global: Sistema Congelado -->
+    {% if config and config.congelado and current_user.is_authenticated and not current_user.is_alumno %}
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-2 w-full no-print">
+        <div class="bg-amber-950/60 border border-amber-500/40 rounded-xl p-3 flex items-center justify-between shadow-lg">
+            <div class="flex items-center gap-2.5">
+                <i class="fa-solid fa-snowflake text-amber-400 text-base"></i>
+                <span class="text-sm font-semibold text-amber-200">Sistema Congelado — No se permiten cambios</span>
+            </div>
+            {% if config.motivo_congelacion %}
+            <span class="text-xs text-amber-300/70 hidden sm:inline">{{ config.motivo_congelacion }}</span>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
 
     <!-- Main Content Body -->
     <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
