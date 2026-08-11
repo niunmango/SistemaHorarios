@@ -1,5 +1,5 @@
 # 📘 Manual de Uso y Usuario — Sistema de Gestión de Horarios y Aulas
-**CURZA — Universidad Nacional del Comahue (UNComa)**  
+**CURZAS — Universidad Nacional del Comahue (UNComa)**  
 *Tecnicatura Universitaria en Administración de Sistemas y Software Libre (TUASSL)*  
 *Tecnicatura Universitaria en Desarrollo Web (TUDW)*  
 **Versión 1.0.0**
@@ -7,7 +7,7 @@
 ---
 
 ## 📌 1. Introducción y Propósito
-El **Sistema de Gestión de Horarios y Aulas** es una aplicación web desarrollada para el Centro Universitario Regional Zona Atlántica (CURZA) de la Universidad Nacional del Comahue. Su propósito principal es planificar, validar y visualizar la distribución semanal de materias y el uso de los espacios físicos (laboratorios de computación y aulas comunes), garantizando el cumplimiento de la reglamentación académica y optimizando la coordinación entre docentes, gestores y estudiantes.
+El **Sistema de Gestión de Horarios y Aulas** es una aplicación web desarrollada para el Complejo Universitario Zona Atlántica y Sur (CURZAS) de la Universidad Nacional del Comahue. Su propósito principal es planificar, validar y visualizar la distribución semanal de materias y el uso de los espacios físicos (laboratorios de computación y aulas comunes), garantizando el cumplimiento de la reglamentación académica y optimizando la coordinación entre docentes, gestores y estudiantes.
 
 ---
 
@@ -85,7 +85,7 @@ $$H_{sinc} \ge \left\lfloor \frac{H_{total}}{2} \right\rfloor + 1$$
 
 1. Ingrese a la sección **`Bloqueos Externos`**.
 2. Permite reservar aulas físicas para materias de otras unidades académicas (Exactas, Economía) o eventos institucionales.
-3. Estos bloqueos ocupan el aula física en la grilla impidiendo colisiones, pero **no afectan la regla del >50% sincrónico** de las tecnicaturas del CURZA.
+3. Estos bloqueos ocupan el aula física en la grilla impidiendo colisiones, pero **no afectan la regla del >50% sincrónico** de las tecnicaturas del CURZAS.
 
 ---
 
@@ -96,4 +96,4 @@ $$H_{sinc} \ge \left\lfloor \frac{H_{total}}{2} \right\rfloor + 1$$
 
 ---
 
-© 2026 Universidad Nacional del Comahue — CURZA (Departamento de Ciencia y Tecnología)
+© 2026 Universidad Nacional del Comahue — CURZAS (Departamento de Ciencia y Tecnología)

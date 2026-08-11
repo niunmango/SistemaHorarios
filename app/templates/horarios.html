@@ -35,7 +35,7 @@
 
     <!-- Print Title Banner (Only visible when printing) -->
     <div class="hidden print:block mb-4 text-center border-b-2 border-black pb-2">
-        <h2 class="text-xl font-bold text-black uppercase tracking-wider">Universidad Nacional del Comahue — CURZA</h2>
+        <h2 class="text-xl font-bold text-black uppercase tracking-wider">Universidad Nacional del Comahue — CURZAS</h2>
         <h3 class="text-base font-bold text-black">Grilla Semanal de Horarios de Clases (08:00 a 21:00 hs)</h3>
         <p class="text-xs text-black italic">
             {% if carrera_id %}{% for c in carreras if c.id == carrera_id %}Carrera: {{ c.nombre }} ({{ c.codigo }}) | {% endfor %}{% endif %}

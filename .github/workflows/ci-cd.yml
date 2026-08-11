@@ -1,4 +1,4 @@
-name: CI/CD Pipeline - Sistema Horarios CURZA
+name: CI/CD Pipeline - Sistema Horarios CURZAS
 
 on:
   push:

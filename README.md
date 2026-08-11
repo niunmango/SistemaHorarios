@@ -1,11 +1,11 @@
-# 📅 Sistema de Gestión de Horarios y Aulas — CURZA UNComa
+# 📅 Sistema de Gestión de Horarios y Aulas — CURZAS UNComa
 
 ![Python Version](https://img.shields.io/badge/Python-3.12-blue.svg)
 ![Framework](https://img.shields.io/badge/Framework-Flask-emerald.svg)
 ![Status](https://img.shields.io/badge/Status-v1.0.0%20Ready-success.svg)
 ![License](https://img.shields.io/badge/License-GPLv3-blue.svg)
 
-Sistema web de administración, planificación de horarios y gestión de espacios físicos (laboratorios de informática y aulas) desarrollado para el Centro Universitario Regional Zona Atlántica (**CURZA**) de la **Universidad Nacional del Comahue (UNComa)**.
+Sistema web de administración, planificación de horarios y gestión de espacios físicos (laboratorios de informática y aulas) desarrollado para el Complejo Universitario Zona Atlántica y Sur (**CURZAS**) de la **Universidad Nacional del Comahue (UNComa)**.
 
 Diseñado específicamente para las carreras:
 - **TUASSL**: *Tecnicatura Universitaria en Administración de Sistemas y Software Libre* (Ord. 0895/12 CS).
@@ -87,12 +87,12 @@ El proyecto incluye un `Containerfile` optimizado para entornos de producción.
 
 ### Compilar la imagen:
 ```bash
-podman build -t sistema-horarios-curza -f Containerfile .
+podman build -t sistema-horarios-curzas -f Containerfile .
 ```
 
 ### Ejecutar el contenedor:
 ```bash
-podman run -d -p 5000:5000 --name horarios_app sistema-horarios-curza
+podman run -d -p 5000:5000 --name horarios_app sistema-horarios-curzas
 ```
 
 ---
@@ -152,4 +152,4 @@ SistemaHorarios/
 
 ## 📜 Licencia
 Este proyecto es Software Libre distribuido bajo los términos de la **[GNU General Public License v3.0 (GPLv3)](LICENSE)**.
-Desarrollado para el **CURZA — Universidad Nacional del Comahue**.
+Desarrollado para el **CURZAS — Universidad Nacional del Comahue**.

@@ -8,7 +8,7 @@ def seed_database():
     db.drop_all()
     db.create_all()
 
-    print("🌱 Inicializando datos base del CURZA (Profesores, TUASSL, TUDW, Aulas)...")
+    print("🌱 Inicializando datos base del CURZAS (Profesores, TUASSL, TUDW, Aulas)...")
 
     # 1. Plantel Docente (Personas)
     p_ramiro = Profesor(nombre_completo='Ramiro García Poggi', categoria_habitual='PAD', email='ramiro.garcia@fi.uncoma.edu.ar')
@@ -29,7 +29,7 @@ def seed_database():
     admin = User(username='admin', email='admin@fi.uncoma.edu.ar', nombre_completo='Administrador del Sistema', role='admin')
     admin.set_password('admin123')
 
-    gestor = User(username='gestor', email='gestor@fi.uncoma.edu.ar', nombre_completo='Coordinador de Horarios CURZA', role='gestor_aulas')
+    gestor = User(username='gestor', email='gestor@fi.uncoma.edu.ar', nombre_completo='Coordinador de Horarios CURZAS', role='gestor_aulas')
     gestor.set_password('gestor123')
 
     docente = User(username='docente', email='docente@fi.uncoma.edu.ar', nombre_completo='Ramiro García Poggi', role='docente', profesor=p_ramiro)
@@ -42,8 +42,8 @@ def seed_database():
     db.session.commit()
 
     # 3. Carreras
-    tuassl = Carrera(codigo='TUASSL', nombre='Tecnicatura Universitaria en Administración de Sistemas y Software Libre', descripcion='Ordenanza 0895/12 CS - CURZA / FI')
-    tudw = Carrera(codigo='TUDW', nombre='Tecnicatura Universitaria en Desarrollo Web', descripcion='Ordenanza 0885/12 CS - CURZA / FI')
+    tuassl = Carrera(codigo='TUASSL', nombre='Tecnicatura Universitaria en Administración de Sistemas y Software Libre', descripcion='Ordenanza 0895/12 CS - CURZAS / FI')
+    tudw = Carrera(codigo='TUDW', nombre='Tecnicatura Universitaria en Desarrollo Web', descripcion='Ordenanza 0885/12 CS - CURZAS / FI')
     externa = Carrera(codigo='EXTERNA', nombre='Materias y Bloqueos Externos', descripcion='Materias de Exactas, otras carreras o eventos de reserva de aulas')
     
     db.session.add_all([tuassl, tudw, externa])
