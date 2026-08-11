@@ -56,5 +56,9 @@ def create_app(test_config=None):
 
     with app.app_context():
         db.create_all()
+        # Poblado automático si la base de datos está vacía (ideal para Render, Gunicorn y Docker)
+        if not app.config.get('TESTING') and User.query.count() == 0:
+            from app.seed import seed_database
+            seed_database()
 
     return app
