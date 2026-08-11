@@ -73,21 +73,18 @@ def validar_bloque_nuevo(asignatura_id, dia_semana, hora_inicio, hora_fin, modal
 
     # 1. Colisión de Aula (Solo dentro del MISMO cuatrimestre y descartando clases compartidas)
     if modalidad in ['Presencial', 'Híbrido', 'Bloqueo Aula'] and espacio_fisico_id:
-        bloques_aula = BloqueHorario.query.filter(
+        bloques_aula = BloqueHorario.query.join(Asignatura).filter(
             BloqueHorario.espacio_fisico_id == espacio_fisico_id,
             BloqueHorario.dia_semana == dia_semana,
-            BloqueHorario.modalidad.in_(['Presencial', 'Híbrido', 'Bloqueo Aula'])
+            BloqueHorario.modalidad.in_(['Presencial', 'Híbrido', 'Bloqueo Aula']),
+            Asignatura.cuatrimestre == asignatura.cuatrimestre
         ).all()
 
         for b in bloques_aula:
             if bloque_id_actual and b.id == bloque_id_actual:
                 continue
-            
-            # Filtrar: No hay colisión si pertenecen a cuatrimestres distintos
-            if b.asignatura and b.asignatura.cuatrimestre != asignatura.cuatrimestre:
-                continue
 
-            # Filtrar: No hay colisión si es la misma clase compartida entre carreras
+            # Filtrar si es la misma clase compartida entre carreras
             if b.asignatura_id == asignatura.id:
                 continue
             nom_b = b.asignatura.nombre.strip().lower()
@@ -101,21 +98,22 @@ def validar_bloque_nuevo(asignatura_id, dia_semana, hora_inicio, hora_fin, modal
                 
                 if b.asignatura.es_externa or b.es_bloqueo_externo:
                     errores.append(
-                        f"Bloqueo de Aula Físico: El espacio '{nombre_aula}' está bloqueado el {b.dia_nombre} "
-                        f"de {b.hora_inicio.strftime('%H:%M')} a {b.hora_fin.strftime('%H:%M')} por una materia/actividad externa ('{b.asignatura.nombre}')."
+                        f"Bloqueo de Aula Físico ({asignatura.cuatrimestre}° Cuatri): El espacio '{nombre_aula}' está reservado el {b.dia_nombre} "
+                        f"de {b.hora_inicio.strftime('%H:%M')} a {b.hora_fin.strftime('%H:%M')} por una actividad externa ('{b.asignatura.nombre}')."
                     )
                 else:
                     errores.append(
-                        f"Conflicto de Aula: El espacio '{nombre_aula}' ya se encuentra ocupado el {b.dia_nombre} "
-                        f"de {b.hora_inicio.strftime('%H:%M')} a {b.hora_fin.strftime('%H:%M')} por '{b.asignatura.nombre}' ({b.asignatura.carrera.codigo})."
+                        f"Conflicto de Aula ({asignatura.cuatrimestre}° Cuatri): El espacio '{nombre_aula}' ya se encuentra ocupado el {b.dia_nombre} "
+                        f"de {b.hora_inicio.strftime('%H:%M')} a {b.hora_fin.strftime('%H:%M')} por la materia '{b.asignatura.nombre}' ({b.asignatura.carrera.codigo})."
                     )
 
     # 2. Colisión de Docente / Profesor (Solo dentro del MISMO cuatrimestre y descartando clases compartidas)
     if profesor_id and modalidad != 'Asincrónico (PEDCO)':
-        bloques_profesor = BloqueHorario.query.filter(
+        bloques_profesor = BloqueHorario.query.join(Asignatura).filter(
             BloqueHorario.profesor_id == profesor_id,
             BloqueHorario.dia_semana == dia_semana,
-            BloqueHorario.es_sincronico == True
+            BloqueHorario.es_sincronico == True,
+            Asignatura.cuatrimestre == asignatura.cuatrimestre
         ).all()
 
         profesor_obj = db.session.get(Profesor, profesor_id)
@@ -123,10 +121,6 @@ def validar_bloque_nuevo(asignatura_id, dia_semana, hora_inicio, hora_fin, modal
 
         for b in bloques_profesor:
             if bloque_id_actual and b.id == bloque_id_actual:
-                continue
-            
-            # Filtrar cuatrimestres distintos
-            if b.asignatura and b.asignatura.cuatrimestre != asignatura.cuatrimestre:
                 continue
 
             # Filtrar si el profesor está dictando la misma clase compartida simultáneamente para dos carreras
@@ -139,7 +133,7 @@ def validar_bloque_nuevo(asignatura_id, dia_semana, hora_inicio, hora_fin, modal
 
             if hay_solapamiento_horario(hora_inicio, hora_fin, b.hora_inicio, b.hora_fin):
                 errores.append(
-                    f"Conflicto de Docente: El profesor/a '{prof_nombre}' ya tiene asignado el dictado de "
+                    f"Conflicto de Docente ({asignatura.cuatrimestre}° Cuatri): El profesor/a '{prof_nombre}' ya tiene asignado el dictado de "
                     f"'{b.asignatura.nombre}' ({b.rol_docente_label}) el {b.dia_nombre} de {b.hora_inicio.strftime('%H:%M')} a {b.hora_fin.strftime('%H:%M')}."
                 )
 
@@ -168,21 +162,39 @@ def validar_bloque_nuevo(asignatura_id, dia_semana, hora_inicio, hora_fin, modal
     return es_valido, errores, advertencias
 
 
-def obtener_ids_bloques_en_conflicto():
-    """Retorna un conjunto de IDs de bloques horarios que tienen conflicto de aula física o conflicto de docente en el mismo cuatrimestre."""
-    ids_conflictos = set()
-    
+def obtener_ids_bloques_en_conflicto(cuatrimestre=None):
+    """Retorna un conjunto de IDs de bloques horarios que tienen conflicto en el cuatrimestre especificado."""
+    mapa = obtener_mapa_explicacion_conflictos(cuatrimestre=cuatrimestre)
+    return set(mapa.keys())
+
+
+def obtener_mapa_explicacion_conflictos(cuatrimestre=None):
+    """
+    Retorna un diccionario {bloque_id: [lista_de_mensajes_de_conflicto]} 
+    explicando detalladamente cada conflicto filtrado por cuatrimestre.
+    """
+    mapa = {}
+
+    def agregar_conflicto(bloque_id, msj):
+        if bloque_id not in mapa:
+            mapa[bloque_id] = []
+        if msj not in mapa[bloque_id]:
+            mapa[bloque_id].append(msj)
+
     # 1. Conflictos de Aula
-    bloques_fisicos = BloqueHorario.query.filter(
+    query_fisicos = BloqueHorario.query.join(Asignatura).filter(
         BloqueHorario.modalidad.in_(['Presencial', 'Híbrido', 'Bloqueo Aula']),
         BloqueHorario.espacio_fisico_id.isnot(None)
-    ).all()
+    )
+    if cuatrimestre:
+        query_fisicos = query_fisicos.filter(Asignatura.cuatrimestre == cuatrimestre)
+    bloques_fisicos = query_fisicos.all()
 
     for i in range(len(bloques_fisicos)):
         for j in range(i + 1, len(bloques_fisicos)):
             b1 = bloques_fisicos[i]
             b2 = bloques_fisicos[j]
-            
+
             if not es_mismo_cuatrimestre(b1, b2):
                 continue
             if son_materia_compartida(b1, b2):
@@ -190,14 +202,26 @@ def obtener_ids_bloques_en_conflicto():
 
             if b1.espacio_fisico_id == b2.espacio_fisico_id and b1.dia_semana == b2.dia_semana:
                 if hay_solapamiento_horario(b1.hora_inicio, b1.hora_fin, b2.hora_inicio, b2.hora_fin):
-                    ids_conflictos.add(b1.id)
-                    ids_conflictos.add(b2.id)
+                    aula = db.session.get(EspacioFisico, b1.espacio_fisico_id)
+                    nombre_aula = aula.nombre if aula else f"ID {b1.espacio_fisico_id}"
+                    c_num = b1.asignatura.cuatrimestre if b1.asignatura else 1
+
+                    msj1 = (f"⚠️ CONFLICTO DE AULA ({c_num}° Cuatrimestre): El espacio '{nombre_aula}' está ocupado simultáneamente "
+                            f"el {b1.dia_nombre} de {b1.hora_inicio.strftime('%H:%M')} a {b1.hora_fin.strftime('%H:%M')} por '{b2.asignatura.nombre}' ({b2.asignatura.carrera.codigo}).")
+                    msj2 = (f"⚠️ CONFLICTO DE AULA ({c_num}° Cuatrimestre): El espacio '{nombre_aula}' está ocupado simultáneamente "
+                            f"el {b2.dia_nombre} de {b2.hora_inicio.strftime('%H:%M')} a {b2.hora_fin.strftime('%H:%M')} por '{b1.asignatura.nombre}' ({b1.asignatura.carrera.codigo}).")
+
+                    agregar_conflicto(b1.id, msj1)
+                    agregar_conflicto(b2.id, msj2)
 
     # 2. Conflictos de Docentes
-    bloques_docentes = BloqueHorario.query.filter(
+    query_docentes = BloqueHorario.query.join(Asignatura).filter(
         BloqueHorario.profesor_id.isnot(None),
         BloqueHorario.es_sincronico == True
-    ).all()
+    )
+    if cuatrimestre:
+        query_docentes = query_docentes.filter(Asignatura.cuatrimestre == cuatrimestre)
+    bloques_docentes = query_docentes.all()
 
     for i in range(len(bloques_docentes)):
         for j in range(i + 1, len(bloques_docentes)):
@@ -211,10 +235,19 @@ def obtener_ids_bloques_en_conflicto():
 
             if b1.profesor_id == b2.profesor_id and b1.dia_semana == b2.dia_semana:
                 if hay_solapamiento_horario(b1.hora_inicio, b1.hora_fin, b2.hora_inicio, b2.hora_fin):
-                    ids_conflictos.add(b1.id)
-                    ids_conflictos.add(b2.id)
+                    prof = db.session.get(Profesor, b1.profesor_id)
+                    prof_nom = prof.nombre_completo if prof else f"ID {b1.profesor_id}"
+                    c_num = b1.asignatura.cuatrimestre if b1.asignatura else 1
 
-    return ids_conflictos
+                    msj1 = (f"⚠️ CONFLICTO DOCENTE ({c_num}° Cuatrimestre): El prof. '{prof_nom}' tiene superpuesta la clase de "
+                            f"'{b2.asignatura.nombre}' el {b1.dia_nombre} de {b1.hora_inicio.strftime('%H:%M')} a {b1.hora_fin.strftime('%H:%M')}.")
+                    msj2 = (f"⚠️ CONFLICTO DOCENTE ({c_num}° Cuatrimestre): El prof. '{prof_nom}' tiene superpuesta la clase de "
+                            f"'{b1.asignatura.nombre}' el {b2.dia_nombre} de {b2.hora_inicio.strftime('%H:%M')} a {b2.hora_fin.strftime('%H:%M')}.")
+
+                    agregar_conflicto(b1.id, msj1)
+                    agregar_conflicto(b2.id, msj2)
+
+    return mapa
 
 
 def auditar_sistema_completo():
@@ -286,9 +319,11 @@ def auditar_sistema_completo():
             if b1.espacio_fisico_id == b2.espacio_fisico_id and b1.dia_semana == b2.dia_semana:
                 if hay_solapamiento_horario(b1.hora_inicio, b1.hora_fin, b2.hora_inicio, b2.hora_fin):
                     aula = db.session.get(EspacioFisico, b1.espacio_fisico_id)
+                    c_num = b1.asignatura.cuatrimestre if b1.asignatura else 1
                     reporte['conflictos_aulas'].append({
                         'b1_id': b1.id,
                         'b2_id': b2.id,
+                        'cuatrimestre': c_num,
                         'aula': aula.nombre if aula else 'Desconocida',
                         'dia': b1.dia_nombre,
                         'materia1': b1.asignatura.nombre,
@@ -318,8 +353,10 @@ def auditar_sistema_completo():
             if b1.profesor_id == b2.profesor_id and b1.dia_semana == b2.dia_semana:
                 if hay_solapamiento_horario(b1.hora_inicio, b1.hora_fin, b2.hora_inicio, b2.hora_fin):
                     prof = db.session.get(Profesor, b1.profesor_id)
+                    c_num = b1.asignatura.cuatrimestre if b1.asignatura else 1
                     reporte['conflictos_docentes'].append({
                         'profesor': prof.nombre_completo if prof else 'Desconocido',
+                        'cuatrimestre': c_num,
                         'categoria': b1.rol_docente_label,
                         'dia': b1.dia_nombre,
                         'materia1': b1.asignatura.nombre,

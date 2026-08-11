@@ -194,9 +194,18 @@
                                     <!-- SMART HOVER POPOVER TOOLTIP (Hidden during print) -->
                                     <div class="hidden group-hover:block absolute left-1/2 -translate-x-1/2 {% if is_bottom_row %}bottom-full mb-1.5{% else %}top-full mt-1.5{% endif %} w-72 p-3.5 bg-slate-950 border border-slate-700 rounded-xl shadow-2xl z-50 text-xs space-y-2 pointer-events-auto no-print">
                                         {% if es_conflicto %}
-                                        <div class="p-2 bg-rose-900/80 border border-rose-500 rounded-lg text-white font-bold text-[11px] flex items-center gap-1.5">
-                                            <i class="fa-solid fa-triangle-exclamation text-amber-300"></i>
-                                            <span>¡SOLAPAMIENTO / CONFLICTO DETECTADO!</span>
+                                        <div class="p-2.5 bg-rose-950/95 border border-rose-500 rounded-lg text-rose-100 text-[11px] space-y-1 shadow-lg">
+                                            <div class="font-extrabold flex items-center gap-1.5 text-rose-300">
+                                                <i class="fa-solid fa-triangle-exclamation text-amber-400 text-sm"></i>
+                                                <span>SOLAPAMIENTO DETECTADO</span>
+                                            </div>
+                                            {% if mapa_conflictos and mapa_conflictos.get(b.id) %}
+                                                {% for exp in mapa_conflictos.get(b.id) %}
+                                                    <p class="text-[10px] leading-snug font-medium text-rose-200 border-t border-rose-800/80 pt-1">{{ exp }}</p>
+                                                {% endfor %}
+                                            {% else %}
+                                                <p class="text-[10px] text-rose-200">Conflicto de horario o espacio físico.</p>
+                                            {% endif %}
                                         </div>
                                         {% endif %}
 

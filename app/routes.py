@@ -64,7 +64,8 @@ def horarios():
     if modalidad:
         query = query.filter(BloqueHorario.modalidad == modalidad)
 
-    ids_conflictos = obtener_ids_bloques_en_conflicto()
+    ids_conflictos = obtener_ids_bloques_en_conflicto(cuatrimestre=cuatrimestre)
+    mapa_conflictos = obtener_mapa_explicacion_conflictos(cuatrimestre=cuatrimestre)
 
     if solo_conflictos:
         query = query.filter(BloqueHorario.id.in_(ids_conflictos if ids_conflictos else [-1]))
@@ -98,7 +99,8 @@ def horarios():
                            profesor_id=profesor_id,
                            modalidad=modalidad,
                            solo_conflictos=solo_conflictos,
-                           ids_conflictos=ids_conflictos)
+                           ids_conflictos=ids_conflictos,
+                           mapa_conflictos=mapa_conflictos)
 
 
 @main_bp.route('/profesores')
