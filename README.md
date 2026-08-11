@@ -113,14 +113,35 @@ El archivo **`compose.yaml`** define dos servicios: un contenedor **MariaDB** (b
 
 > **Sobre la red entre contenedores**: la base de datos usa una **IP estática** (`DB_IP`) dentro de la red del compose. Esto permite que la aplicación llegue a MariaDB incluso cuando Podman usa el backend **CNI sin el plugin `dnsname`** (caso en el que los contenedores no se resuelven entre sí por nombre). Si su instalación de Podman resuelve nombres (netavark + aardvark) o usa Docker, puede cambiar `DATABASE_URL` al nombre de servicio `db` y quitar la IP estática del archivo `compose.yaml`.
 
-### Despliegue con Podman Compose
+### Despliegue con el paquete preconstruido de GitHub Actions (sin `--build`)
+
+El pipeline de CI/CD en GitHub Actions construye y publica automáticamente la imagen del contenedor en **GitHub Container Registry (GHCR)** en cada push a la rama principal:
+`ghcr.io/ramiro-uncoma/sistemahorarios:latest`
+
+Para desplegar la aplicación utilizando directamente este paquete preconstruido (sin necesidad de compilar localmente con `--build`):
+
 ```bash
-# Levantar todo (construye la imagen y crea MariaDB + la app)
+# 1. Descargar la versión más reciente del paquete desde GHCR (opcional, podman lo descargará si no existe)
+podman pull ghcr.io/ramiro-uncoma/sistemahorarios:latest
+
+# 2. Levantar el entorno sin compilar imagen local
+podman-compose up -d
+
+# En sistemas con "podman compose" integrado:
+#   podman compose up -d
+```
+
+### Despliegue compilando la imagen localmente (`--build`)
+
+Si realiza modificaciones en el código fuente o en el `Containerfile` y desea construir la imagen en su propio equipo:
+
+```bash
 podman-compose up -d --build
+```
 
-# En sistemas con "podman compose" también funciona:
-#   podman compose up -d --build
+### Verificación y gestión de servicios
 
+```bash
 # Verificar el estado de los servicios
 podman-compose ps
 

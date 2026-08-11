@@ -82,7 +82,8 @@ def horarios():
     bloques = query.order_by(
         BloqueHorario.dia_semana,
         BloqueHorario.hora_inicio,
-        BloqueHorario.espacio_fisico_id.asc().nulls_last()
+        BloqueHorario.espacio_fisico_id.is_(None),
+        BloqueHorario.espacio_fisico_id.asc()
     ).all()
 
     carreras = Carrera.query.all()

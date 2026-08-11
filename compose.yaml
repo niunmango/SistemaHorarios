@@ -46,6 +46,7 @@ services:
     build:
       context: .
       dockerfile: Containerfile
+    image: ghcr.io/ramiro-uncoma/sistemahorarios:latest
     container_name: sistema_horarios_app
     restart: unless-stopped
     ports:
