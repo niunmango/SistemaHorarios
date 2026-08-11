@@ -72,7 +72,7 @@ Por defecto, la interfaz del sistema permite ingresar con usuario y contraseña 
 
 ### 1. Clonar el repositorio y preparar entorno
 ```bash
-git clone https://github.com/ramiro-uncoma/SistemaHorarios.git
+git clone https://github.com/niunmango/SistemaHorarios.git
 cd SistemaHorarios
 
 # Crear entorno virtual
@@ -116,13 +116,13 @@ El archivo **`compose.yaml`** define dos servicios: un contenedor **MariaDB** (b
 ### Despliegue con el paquete preconstruido de GitHub Actions (sin `--build`)
 
 El pipeline de CI/CD en GitHub Actions construye y publica automáticamente la imagen del contenedor en **GitHub Container Registry (GHCR)** en cada push a la rama principal:
-`ghcr.io/ramiro-uncoma/sistemahorarios:latest`
+`ghcr.io/niunmango/sistemahorarios:latest`
 
 Para desplegar la aplicación utilizando directamente este paquete preconstruido (sin necesidad de compilar localmente con `--build`):
 
 ```bash
 # 1. Descargar la versión más reciente del paquete desde GHCR (opcional, podman lo descargará si no existe)
-podman pull ghcr.io/ramiro-uncoma/sistemahorarios:latest
+podman pull ghcr.io/niunmango/sistemahorarios:latest
 
 # 2. Levantar el entorno sin compilar imagen local
 podman-compose up -d
