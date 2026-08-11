@@ -1,4 +1,5 @@
 import os
+import threading
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
@@ -7,6 +8,7 @@ from authlib.integrations.flask_client import OAuth
 db = SQLAlchemy()
 login_manager = LoginManager()
 oauth = OAuth()
+_db_init_lock = threading.Lock()
 
 def create_app(test_config=None):
     app = Flask(__name__, instance_relative_config=True)
@@ -55,16 +57,17 @@ def create_app(test_config=None):
     app.register_blueprint(main_bp)
 
     with app.app_context():
-        try:
-            db.create_all()
-        except Exception:
-            pass
+        with _db_init_lock:
+            try:
+                db.create_all()
+            except Exception:
+                pass
 
-        try:
-            if not app.config.get('TESTING') and User.query.count() == 0:
-                from app.seed import seed_database
-                seed_database()
-        except Exception:
-            pass
+            try:
+                if not app.config.get('TESTING') and User.query.count() == 0:
+                    from app.seed import seed_database
+                    seed_database()
+            except Exception:
+                pass
 
     return app
