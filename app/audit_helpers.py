@@ -5,6 +5,7 @@ from datetime import datetime, timezone
 from flask import request
 from flask_login import current_user
 from app import db
+from app.models import Auditoria, Asignatura, SolicitudCambio
 
 
 def guardar_auditoria(accion, entidad_tipo=None, entidad_id=None, detalles=None, ip=None):
@@ -52,7 +53,6 @@ def es_solicitar_aprobacion(user, bloque):
         return False
     
     # Verificar si el profesor es PAD/AYP de la materia del bloque
-    from app.models import Asignatura
     asig = db.session.get(Asignatura, bloque.asignatura_id)
     if not asig:
         return False
@@ -72,7 +72,6 @@ def es_solicitar_aprobacion(user, bloque):
 
 def crear_solicitud_aprobacion(bloque, user, descripcion):
     """Crea una solicitud de aprobación para un bloque que requiere permiso."""
-    from app.models import SolicitudCambio, Profesor
     my_prof_id = obtener_profesor_usuario(user)
     
     solicitud = SolicitudCambio(
@@ -89,7 +88,6 @@ def crear_solicitud_aprobacion(bloque, user, descripcion):
 
 def aprobar_solicitud(solicitud_id, user, approver_notes=None):
     """Aprueba una solicitud de cambio. El bloque se edita según lo solicitado."""
-    from app.models import SolicitudCambio
     solicitud = db.session.get(SolicitudCambio, solicitud_id)
     if not solicitud:
         return None
@@ -106,7 +104,6 @@ def aprobar_solicitud(solicitud_id, user, approver_notes=None):
 
 def rechazar_solicitud(solicitud_id, user, notes=None):
     """Rechaza una solicitud de cambio."""
-    from app.models import SolicitudCambio
     solicitud = db.session.get(SolicitudCambio, solicitud_id)
     if not solicitud:
         return None
