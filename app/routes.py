@@ -1,12 +1,29 @@
+import json
 from datetime import datetime, time, timezone
 from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify
 from flask_login import login_required, current_user
 from sqlalchemy.exc import IntegrityError
 from app import db
-from app.models import User, Carrera, Asignatura, EspacioFisico, BloqueHorario, Profesor, ConfiguracionSistema, DIAS_SEMANA, MODALIDADES, TIPOS_CLASE
+from app.models import User, Carrera, Asignatura, EspacioFisico, BloqueHorario, Profesor, ConfiguracionSistema, DIAS_SEMANA, MODALIDADES, TIPOS_CLASE, Auditoria, SolicitudCambio
 from app.rules import auditar_sistema_completo, validar_bloque_nuevo, calcular_minimo_sincronico, obtener_ids_bloques_en_conflicto, obtener_mapa_explicacion_conflictos
+from app.audit_helpers import es_solicitar_aprobacion, crear_solicitud_aprobacion
 
 main_bp = Blueprint('main', __name__)
+
+def guardar_auditoria(accion, entidad_tipo=None, entidad_id=None, detalles=None, ip=None):
+    """Registra una entrada en la tabla de auditoría."""
+    ip_address = ip or request.remote_addr if request else '127.0.0.1'
+    audit_entry = Auditoria(
+        usuario_id=current_user.id,
+        accion=accion,
+        entidad_tipo=entidad_tipo,
+        entidad_id=entidad_id,
+        detalles=json.dumps(detalles) if detalles else None,
+        ip_address=ip_address
+    )
+    db.session.add(audit_entry)
+    db.session.commit()
+
 
 @main_bp.route('/')
 def index():
@@ -172,6 +189,20 @@ def api_mover_bloque(id):
     bloque.hora_inicio = nueva_hora_ini
     bloque.hora_fin = nueva_hora_fin
     db.session.commit()
+    
+    # Logging de auditoria
+    guardar_auditoria(
+        accion='editar_bloque_api',
+        entidad_tipo='bloque',
+        entidad_id=bloque.id,
+        detalles={
+            'bloque_id': bloque.id,
+            'nuevo_dia': nuevo_dia,
+            'nueva_hora_inicio': str(nueva_hora_ini),
+            'nueva_hora_fin': str(nueva_hora_fin),
+            'metodo': 'api_mover_bloque'
+        }
+    )
 
     return jsonify({
         'success': True,
@@ -212,7 +243,15 @@ def nuevo_profesor():
         prof = Profesor(nombre_completo=nombre_completo, categoria_habitual=categoria_habitual, email=email)
         db.session.add(prof)
         db.session.commit()
-
+        
+        # Logging de auditoría
+        guardar_auditoria(
+            accion="crear_profesor",
+            entidad_tipo="profesor",
+            entidad_id=prof.id,
+            detalles={"nombre_completo": nombre_completo, "categoria": categoria_habitual, "email": email}
+        )
+        
         flash(f'Profesor/a "{nombre_completo}" dado de alta con éxito.', 'success')
         return redirect(url_for('main.profesores'))
 
@@ -236,11 +275,33 @@ def editar_profesor(id):
         return redirect(url_for('main.profesores'))
 
     if request.method == 'POST':
+        old_nombre = prof.nombre_completo
+        old_categoria = prof.categoria_habitual
+        old_email = prof.email
+        
         prof.nombre_completo = request.form.get('nombre_completo', '').strip()
         prof.categoria_habitual = request.form.get('categoria_habitual', 'PAD')
         prof.email = request.form.get('email', '').strip()
 
         db.session.commit()
+        
+        # Logging de auditoría
+        if (prof.nombre_completo != old_nombre or prof.categoria_habitual != old_categoria or prof.email != old_email):
+            guardar_auditoria(
+                accion="editar_profesor",
+                entidad_tipo="profesor",
+                entidad_id=prof.id,
+                detalles={
+                    "id": prof.id,
+                    "nombre_completo": prof.nombre_completo,
+                    "anterior_nombre": old_nombre,
+                    "categoria": prof.categoria_habitual,
+                    "anterior_categoria": old_categoria,
+                    "email": prof.email,
+                    "anterior_email": old_email
+                }
+            )
+        
         flash(f'Profesor/a "{prof.nombre_completo}" actualizado con éxito.', 'success')
         return redirect(url_for('main.profesores'))
 
@@ -260,6 +321,13 @@ def eliminar_profesor(id):
 
     prof = db.session.get(Profesor, id)
     if prof:
+        # Logging de auditoría
+        guardar_auditoria(
+            accion="eliminar_profesor",
+            entidad_tipo="profesor",
+            entidad_id=prof.id,
+            detalles={"nombre_completo": prof.nombre_completo, "id": prof.id}
+        )
         db.session.delete(prof)
         db.session.commit()
         flash(f'Profesor/a "{prof.nombre_completo}" eliminado con éxito.', 'success')
@@ -349,6 +417,23 @@ def nueva_materia():
         db.session.add(asig)
         db.session.commit()
 
+        # Logging de auditoria
+        guardar_auditoria(
+            accion='crear_materia',
+            entidad_tipo='materia',
+            entidad_id=asig.id,
+            detalles={
+                'nombre': nombre,
+                'codigo': codigo,
+                'carrera': carrera_id,
+                'anio_cursada': anio_cursada,
+                'cuatrimestre': cuatrimestre,
+                'carga_horaria': carga_horaria_semanal,
+                'es_externa': es_externa,
+                'profesor_pad_id': profesor_pad_id
+            }
+        )
+
         flash(f'Materia "{nombre}" creada con éxito.', 'success')
         return redirect(url_for('main.materias'))
 
@@ -375,6 +460,15 @@ def editar_materia(id):
     profesores = Profesor.query.order_by(Profesor.nombre_completo).all()
 
     if request.method == 'POST':
+        old_nombre = asig.nombre
+        old_codigo = asig.codigo
+        old_carrera = asig.carrera_id
+        old_anio = asig.anio_cursada
+        old_cuatrimestre = asig.cuatrimestre
+        old_carga = asig.carga_horaria_semanal
+        old_pad = asig.profesor_pad_id
+        old_externa = asig.es_externa
+        
         asig.carrera_id = request.form.get('carrera_id', type=int)
         asig.codigo = request.form.get('codigo', '').strip()
         asig.nombre = request.form.get('nombre', '').strip()
@@ -388,6 +482,31 @@ def editar_materia(id):
         asig.profesores_ayp = Profesor.query.filter(Profesor.id.in_(ayps_selected)).all() if ayps_selected else []
 
         db.session.commit()
+        
+        # Logging de auditoria
+        guardar_auditoria(
+            accion='editar_materia',
+            entidad_tipo='materia',
+            entidad_id=asig.id,
+            detalles={
+                'nombre': asig.nombre,
+                'anterior_nombre': old_nombre,
+                'codigo': asig.codigo,
+                'anterior_codigo': old_codigo,
+                'carrera_id': asig.carrera_id,
+                'anterior_carrera': old_carrera,
+                'anio_cursada': asig.anio_cursada,
+                'anterior_anio': old_anio,
+                'cuatrimestre': asig.cuatrimestre,
+                'anterior_cuatrimestre': old_cuatrimestre,
+                'carga_horaria': asig.carga_horaria_semanal,
+                'anterior_carga': old_carga,
+                'profesor_pad_id': asig.profesor_pad_id,
+                'anterior_pad': old_pad,
+                'es_externa': asig.es_externa
+            }
+        )
+        
         flash(f'Materia "{asig.nombre}" actualizada con éxito.', 'success')
         return redirect(url_for('main.materias'))
 
@@ -478,7 +597,32 @@ def nuevo_bloque():
 
         db.session.add(bloque)
         db.session.commit()
-
+        
+        # Obtener nombre de asignatura para el log
+        asig_nombre = Asignatura.query.get(asignatura_id).nombre if asignatura_id else None
+        
+        # Logging de auditoria
+        guardar_auditoria(
+            accion='crear_bloque',
+            entidad_tipo='bloque',
+            entidad_id=bloque.id,
+            detalles={
+                'asignatura_id': asignatura_id,
+                'asignatura_nombre': asig_nombre,
+                'profesor_id': profesor_id,
+                'rol_docente': rol_docente,
+                'dia_semana': dia_semana,
+                'hora_inicio': hora_inicio_str,
+                'hora_fin': hora_fin_str,
+                'modalidad': modalidad,
+                'tipo': tipo,
+                'espacio_fisico_id': espacio_fisico_id,
+                'es_sincronico': es_sincronico,
+                'es_bloqueo_externo': es_bloqueo_externo,
+                'observaciones': observaciones
+            }
+        )
+        
         flash('Clase / Reserva programada con éxito.', 'success')
         return redirect(url_for('main.horarios'))
 
@@ -551,6 +695,29 @@ def editar_bloque(id):
         bloque.observaciones = observaciones
 
         db.session.commit()
+        
+        # Logging de auditoria
+        guardar_auditoria(
+            accion='editar_bloque',
+            entidad_tipo='bloque',
+            entidad_id=bloque.id,
+            detalles={
+                'bloque_id': bloque.id,
+                'asignatura_id': asignatura_id,
+                'profesor_id': profesor_id,
+                'rol_docente': rol_docente,
+                'dia_semana': dia_semana,
+                'hora_inicio': hora_inicio_str,
+                'hora_fin': hora_fin_str,
+                'modalidad': modalidad,
+                'tipo': tipo,
+                'espacio_fisico_id': espacio_fisico_id,
+                'es_sincronico': bloque.es_sincronico,
+                'es_bloqueo_externo': bloque.es_bloqueo_externo,
+                'observaciones': observaciones
+            }
+        )
+        
         flash('Clase / Reserva reubicada con éxito.', 'success')
         return redirect(url_for('main.horarios'))
 
@@ -566,6 +733,20 @@ def eliminar_bloque(id):
     
     bloque = db.session.get(BloqueHorario, id)
     if bloque and current_user.puede_editar_bloque(bloque):
+        # Logging de auditoria
+        guardar_auditoria(
+            accion='eliminar_bloque',
+            entidad_tipo='bloque',
+            entidad_id=bloque.id,
+            detalles={
+                'bloque_id': bloque.id,
+                'asignatura_id': bloque.asignatura_id,
+                'profesor_id': bloque.profesor_id,
+                'dia_semana': bloque.dia_semana,
+                'hora_inicio': str(bloque.hora_inicio),
+                'hora_fin': str(bloque.hora_fin)
+            }
+        )
         db.session.delete(bloque)
         db.session.commit()
         flash('Clase eliminada del cronograma.', 'info')
@@ -647,6 +828,20 @@ def nuevo_usuario():
             db.session.rollback()
             flash('Error de integridad: el nombre de usuario o email ya está en uso.', 'danger')
             return render_template('usuario_form.html', profesores=profesores, usuario=None)
+        
+        # Logging de auditoria
+        guardar_auditoria(
+            accion='crear_usuario',
+            entidad_tipo='usuario',
+            entidad_id=usuario.id,
+            detalles={
+                'username': username,
+                'email': email,
+                'nombre_completo': nombre_completo,
+                'role': role,
+                'profesor_id': profesor_id
+            }
+        )
 
         flash(f'Usuario "{username}" creado con éxito con rol [{role}].', 'success')
         return redirect(url_for('main.usuarios'))
@@ -696,6 +891,20 @@ def editar_usuario(id):
             db.session.rollback()
             flash('Error al actualizar usuario: nombre de usuario o email duplicado.', 'danger')
             return render_template('usuario_form.html', profesores=profesores, usuario=usuario)
+        
+        # Logging de auditoria
+        guardar_auditoria(
+            accion='editar_usuario',
+            entidad_tipo='usuario',
+            entidad_id=usuario.id,
+            detalles={
+                'username': usuario.username,
+                'email': usuario.email,
+                'nombre_completo': usuario.nombre_completo,
+                'role': usuario.role,
+                'profesor_id': usuario.profesor_id
+            }
+        )
 
         flash(f'Usuario "{usuario.username}" actualizado con éxito.', 'success')
         return redirect(url_for('main.usuarios'))
@@ -738,6 +947,14 @@ def congelar_sistema():
     config.congelado_fecha = datetime.now(timezone.utc)
     db.session.commit()
     
+    # Logging de auditoria
+    guardar_auditoria(
+        accion='congelar_sistema',
+        entidad_tipo='configuracion',
+        entidad_id=config.id,
+        detalles={'motivo': config.motivo_congelacion}
+    )
+
     flash('Sistema CONGELADO. No se permiten cambios hasta que un administrador lo descongele.', 'warning')
     return redirect(url_for('main.dashboard'))
 
@@ -756,5 +973,221 @@ def descongelar_sistema():
     config.congelado_fecha = None
     db.session.commit()
     
+    # Logging de auditoria
+    guardar_auditoria(
+        accion='descongelar_sistema',
+        entidad_tipo='configuracion',
+        entidad_id=config.id,
+        detalles={'motivo_anterior': None}
+    )
+
     flash('Sistema DESCONGELADO. Ahora se permiten cambios nuevamente.', 'success')
     return redirect(url_for('main.dashboard'))
+
+
+# ============================================
+# RUTAS DE AUDITORIA
+# ============================================
+
+@main_bp.route('/auditoria')
+@login_required
+def auditoria():
+    """Vista de registro de auditoría - acceso para admin y gestores."""
+    if not current_user.is_gestor:
+        flash('No tienes permisos para acceder al registro de auditoría.', 'danger')
+        return redirect(url_for('main.dashboard'))
+    
+    # Parámetros de filtro
+    accion_filter = request.args.get('accion', '')
+    entidad_filter = request.args.get('entidad', '')
+    usuario_filter = request.args.get('usuario', '')
+    
+    query = Auditoria.query
+    
+    if accion_filter:
+        query = query.filter(Auditoria.accion == accion_filter)
+    if entidad_filter:
+        query = query.filter(Auditoria.entidad_tipo == entidad_filter)
+    if usuario_filter:
+        query = query.filter(Auditoria.usuario_id == int(usuario_filter))
+    
+    registros = query.order_by(Auditoria.created_at.desc()).limit(500).all()
+    
+    # Estadísticas
+    total_registros = Auditoria.query.count()
+    acciones_distintas = db.session.query(Auditoria.accion, db.func.count(Auditoria.id)).group_by(Auditoria.accion).all()
+    
+    usuarios = User.query.order_by(User.username).all() if current_user.is_admin else []
+    
+    acciones_disponibles = [
+        ('crear_profesor', 'Crear Profesor'),
+        ('editar_profesor', 'Editar Profesor'),
+        ('eliminar_profesor', 'Eliminar Profesor'),
+        ('crear_materia', 'Crear Materia'),
+        ('editar_materia', 'Editar Materia'),
+        ('crear_bloque', 'Crear Bloque'),
+        ('editar_bloque', 'Editar Bloque'),
+        ('eliminar_bloque', 'Eliminar Bloque'),
+        ('crear_usuario', 'Crear Usuario'),
+        ('editar_usuario', 'Editar Usuario'),
+        ('congelar_sistema', 'Congelar Sistema'),
+        ('descongelar_sistema', 'Descongelar Sistema'),
+    ]
+    
+    entidades_disponibles = ['profesor', 'materia', 'bloque', 'usuario', None]
+    
+    return render_template('auditoria.html',
+                           registros=registros,
+                           total=total_registros,
+                           acciones_distintas=acciones_distintas,
+                           usuarios=usuarios,
+                           accion_filter=accion_filter,
+                           entidad_filter=entidad_filter,
+                           usuario_filter=usuario_filter,
+                           acciones_disponibles=acciones_disponibles,
+                           entidades_disponibles=entidades_disponibles)
+
+
+# ============================================
+# RUTAS DE SOLICITUDES DE CAMBIO
+# ============================================
+
+@main_bp.route('/solicitudes')
+@login_required
+def solicitudes():
+    """Vista de solicitudes de aprobación de cambios pendientes."""
+    if not current_user.is_gestor:
+        flash('No tienes permisos para acceder a las solicitudes de cambio.', 'danger')
+        return redirect(url_for('main.dashboard'))
+    
+    # Mostrar solo pendientes
+    pendientes = SolicitudCambio.query.filter_by(estado='pendiente').order_by(SolicitudCambio.creada_en.desc()).all()
+    aprobadas = SolicitudCambio.query.filter_by(estado='aprobada').order_by(SolicitudCambio.aprobada_en.desc()).limit(50).all()
+    rechazadas = SolicitudCambio.query.filter_by(estado='rechazada').order_by(SolicitudCambio.aprobada_en.desc()).limit(50).all()
+    
+    return render_template('solicitudes.html',
+                           pendientes=pendientes,
+                           aprobadas=aprobadas,
+                           rechazadas=rechazadas)
+
+
+@main_bp.route('/solicitudes/<int:solicitud_id>/aprobar', methods=['POST'])
+@login_required
+def aprobar_solicitud(solicitud_id):
+    """Aprueba una solicitud de cambio. Aplica el cambio al bloque automáticamente."""
+    if not current_user.is_gestor:
+        return jsonify({'success': False, 'error': 'No tienes permisos para aprobar solicitudes.'}), 403
+    
+    solicitud = db.session.get(SolicitudCambio, solicitud_id)
+    if not solicitud:
+        return jsonify({'success': False, 'error': 'Solicitud no encontrada.'}), 404
+    
+    if solicitud.estado != 'pendiente':
+        return jsonify({'success': False, 'error': 'La solicitud ya fue procesada.'}), 400
+    
+    # Obtener el bloque
+    bloque = db.session.get(BloqueHorario, solicitud.bloque_id)
+    if not bloque:
+        return jsonify({'success': False, 'error': 'El bloque asociado no existe.'}), 404
+    
+    # Registrar la aprobación
+    from app.audit_helpers import aprobar_solicitud as helper_aprobar
+    result = helper_aprobar(solicitud_id, current_user)
+    
+    if result:
+        # Registrar auditoría de la aprobación
+        guardar_auditoria(
+            accion='aprobacion_cambio',
+            entidad_tipo='solicitud_cambio',
+            entidad_id=solicitud_id,
+            detalles={
+                'solicitud_id': solicitud_id,
+                'bloque_id': solicitud.bloque_id,
+                'profesor_id': solicitud.profesor_id,
+                'descripcion': solicitud.descripcion,
+                'aprobado_por': current_user.username
+            }
+        )
+        
+        return jsonify({
+            'success': True,
+            'message': f'Solicitud #{solicitud_id} aprobada. El cambio fue aplicado al bloque.'
+        })
+    
+    return jsonify({'success': False, 'error': 'Error al aprobar la solicitud.'}), 500
+
+
+@main_bp.route('/solicitudes/<int:solicitud_id>/rechazar', methods=['POST'])
+@login_required
+def rechazar_solicitud_route(solicitud_id):
+    """Rechaza una solicitud de cambio."""
+    if not current_user.is_gestor:
+        return jsonify({'success': False, 'error': 'No tienes permisos para rechazar solicitudes.'}), 403
+    
+    solicitud = db.session.get(SolicitudCambio, solicitud_id)
+    if not solicitud:
+        return jsonify({'success': False, 'error': 'Solicitud no encontrada.'}), 404
+    
+    if solicitud.estado != 'pendiente':
+        return jsonify({'success': False, 'error': 'La solicitud ya fue procesada.'}), 400
+    
+    from app.audit_helpers import rechazar_solicitud as helper_rechazar
+    result = helper_rechazar(solicitud_id, current_user)
+    
+    if result:
+        guardar_auditoria(
+            accion='rechazo_cambio',
+            entidad_tipo='solicitud_cambio',
+            entidad_id=solicitud_id,
+            detalles={
+                'solicitud_id': solicitud_id,
+                'bloque_id': solicitud.bloque_id,
+                'profesor_id': solicitud.profesor_id,
+                'descripcion': solicitud.descripcion,
+                'rechazado_por': current_user.username
+            }
+        )
+        
+        return jsonify({
+            'success': True,
+            'message': f'Solicitud #{solicitud_id} rechazada.'
+        })
+    
+    return jsonify({'success': False, 'error': 'Error al rechazar la solicitud.'}), 500
+
+
+@main_bp.route('/solicitudes/<int:solicitud_id>/detalle')
+@login_required
+def detalle_solicitud(solicitud_id):
+    """Devuelve detalles JSON de una solicitud para mostrar en modal."""
+    solicitud = db.session.get(SolicitudCambio, solicitud_id)
+    if not solicitud:
+        return jsonify({'error': 'No encontrada'}), 404
+    
+    bloque = db.session.get(BloqueHorario, solicitud.bloque_id)
+    profesor = db.session.get(Profesor, solicitud.profesor_id)
+    solicitante = db.session.get(User, solicitud.solicitado_por_id)
+    
+    return jsonify({
+        'id': solicitud.id,
+        'estado': solicitud.estado,
+        'descripcion': solicitud.descripcion,
+        'creada_en': solicitud.creada_en.isoformat() if solicitud.creada_en else None,
+        'bloque': {
+            'id': bloque.id if bloque else None,
+            'asignatura_nombre': bloque.asignatura.nombre if bloque and bloque.asignatura else None,
+            'dia_nombre': bloque.dia_nombre if bloque else None,
+            'hora_inicio': str(bloque.hora_inicio) if bloque else None,
+            'hora_fin': str(bloque.hora_fin) if bloque else None,
+            'modalidad': bloque.modalidad if bloque else None,
+        },
+        'profesor': {
+            'id': profesor.id if profesor else None,
+            'nombre_completo': profesor.nombre_completo if profesor else None,
+        },
+        'solicitante': {
+            'id': solicitante.id if solicitante else None,
+            'username': solicitante.username if solicitante else None,
+            'nombre_completo': solicitante.nombre_completo if solicitante else None,
+        }
+    })

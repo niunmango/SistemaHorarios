@@ -1,0 +1,226 @@
+{% extends "base.html" %}
+
+{% block title %}Solicitudes de Cambio{% endblock %}
+
+{% block content %}
+<div class="row mb-3">
+    <div class="col">
+        <h2 class="text-white"><i class="bi bi-clipboard-check"></i> Solicitudes de Aprobación</h2>
+        <p class="text-secondary">Gestión de solicitudes de cambios pendientes de aprobación por parte de admin/gestor</p>
+    </div>
+</div>
+
+<!-- Pendientes -->
+<div class="card bg-dark border-warning mb-3">
+    <div class="card-header bg-dark text-warning">
+        <h4 class="mb-0"><i class="bi bi-hourglass-split"></i> Pendientes ({{ pendientes|length }})</h4>
+    </div>
+    <div class="card-body p-0">
+        {% if pendientes %}
+        <div class="table-responsive">
+            <table class="table table-dark table-striped mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="text-white">ID</th>
+                        <th class="text-white">Fecha</th>
+                        <th class="text-white">Solicitante</th>
+                        <th class="text-white">Profesor</th>
+                        <th class="text-white">Bloque / Materia</th>
+                        <th class="text-white">Descripción</th>
+                        <th class="text-white">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for s in pendientes %}
+                    <tr>
+                        <td class="text-white"><strong>#{{ s.id }}</strong></td>
+                        <td class="text-white">
+                            <small class="text-secondary">{{ s.creada_en.strftime('%Y-%m-%d %H:%M') }}</small>
+                        </td>
+                        <td class="text-white">
+                            <span class="fw-bold">{{ s.solicitado_por.username }}</span>
+                            <span class="badge bg-secondary">{{ s.solicitado_por.role }}</span>
+                        </td>
+                        <td class="text-white">
+                            {% if s.profesor %}
+                            {{ s.profesor.nombre_completo }}
+                            <span class="badge bg-secondary">{{ s.profesor.categoria_habitual }}</span>
+                            {% else %}
+                            <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-white">
+                            {% if s.bloque %}
+                            {{ s.bloque.asignatura.nombre }}<br>
+                            <small class="text-secondary">{{ s.bloque.dia_nombre }} {{ s.bloque.hora_inicio.strftime('%H:%M') }} - {{ s.bloque.hora_fin.strftime('%H:%M') }}</small>
+                            {% else %}
+                            <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-white text-truncate" style="max-width: 200px;" title="{{ s.descripcion }}">
+                            {{ s.descripcion }}
+                        </td>
+                        <td class="text-white">
+                            <div class="btn-group btn-group-sm">
+                                <button class="btn btn-success" 
+                                        onclick="aprobarSolicitud({{ s.id }})"
+                                        data-bs-toggle="tooltip" 
+                                        title="Aprobar solicitud">
+                                    <i class="bi bi-check-lg"></i> Aprobar
+                                </button>
+                                <button class="btn btn-danger" 
+                                        onclick="rechazarSolicitud({{ s.id }})"
+                                        data-bs-toggle="tooltip" 
+                                        title="Rechazar solicitud">
+                                    <i class="bi bi-x-lg"></i> Rechazar
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-4 text-secondary">
+            <i class="bi bi-check-circle"></i> No hay solicitudes pendientes
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Aprobadas recientes -->
+{% if aprobadas %}
+<div class="card bg-dark border-success mb-3">
+    <div class="card-header bg-dark text-success">
+        <h4 class="mb-0"><i class="bi bi-check-circle"></i> Aprobadas recientes ({{ aprobadas|length }})</h4>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-dark table-striped mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="text-white">ID</th>
+                        <th class="text-white">Fecha aprobación</th>
+                        <th class="text-white">Solicitante</th>
+                        <th class="text-white">Aprobado por</th>
+                        <th class="text-white">Bloque</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for s in aprobadas %}
+                    <tr>
+                        <td class="text-white"><strong>#{{ s.id }}</strong></td>
+                        <td class="text-white"><small class="text-secondary">{{ s.aprobada_en.strftime('%Y-%m-%d %H:%M') }}</small></td>
+                        <td class="text-white">{{ s.solicitado_por.username }}</td>
+                        <td class="text-white">
+                            <span class="fw-bold text-success">{{ s.aprobado_por.username }}</span>
+                            <span class="badge bg-success">{{ s.aprobado_por.role }}</span>
+                        </td>
+                        <td class="text-white">
+                            {% if s.bloque %}
+                            {{ s.bloque.asignatura.nombre }}
+                            {% else %}<span class="text-muted">-</span>{% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Rechazadas recientes -->
+{% if rechazadas %}
+<div class="card bg-dark border-danger mb-3">
+    <div class="card-header bg-dark text-danger">
+        <h4 class="mb-0"><i class="bi bi-x-circle"></i> Rechazadas recientes ({{ rechazadas|length }})</h4>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-dark table-striped mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="text-white">ID</th>
+                        <th class="text-white">Fecha rechazo</th>
+                        <th class="text-white">Solicitante</th>
+                        <th class="text-white">Rechazado por</th>
+                        <th class="text-white">Bloque</th>
+                        <th class="text-white">Observaciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for s in rechazadas %}
+                    <tr>
+                        <td class="text-white"><strong>#{{ s.id }}</strong></td>
+                        <td class="text-white"><small class="text-secondary">{{ s.aprobada_en.strftime('%Y-%m-%d %H:%M') }}</small></td>
+                        <td class="text-white">{{ s.solicitado_por.username }}</td>
+                        <td class="text-white">
+                            <span class="fw-bold text-danger">{{ s.aprobado_por.username }}</span>
+                            <span class="badge bg-danger">{{ s.aprobado_por.role }}</span>
+                        </td>
+                        <td class="text-white">
+                            {% if s.bloque %}
+                            {{ s.bloque.asignatura.nombre }}
+                            {% else %}<span class="text-muted">-</span>{% endif %}
+                        </td>
+                        <td class="text-white">{{ s.observaciones_admin or '-' }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Scripts -->
+<script>
+function aprobarSolicitud(id) {
+    if (!confirm('¿Está seguro de aprobar esta solicitud? El cambio se aplicará automáticamente al bloque.')) return;
+    
+    fetch('/solicitudes/' + id + '/aprobar', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'}
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            alert('Solicitud aprobada correctamente.');
+            location.reload();
+        } else {
+            alert('Error: ' + (data.error || 'No se pudo aprobar.'));
+        }
+    })
+    .catch(e => alert('Error de conexión: ' + e.message));
+}
+
+function rechazarSolicitud(id) {
+    if (!confirm('¿Está seguro de rechazar esta solicitud?')) return;
+    
+    fetch('/solicitudes/' + id + '/rechazar', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'}
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            alert('Solicitud rechazada.');
+            location.reload();
+        } else {
+            alert('Error: ' + (data.error || 'No se pudo rechazar.'));
+        }
+    })
+    .catch(e => alert('Error de conexión: ' + e.message));
+}
+
+// Tooltips
+document.addEventListener('DOMContentLoaded', function() {
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    tooltipTriggerList.map(function(element) {
+        return new bootstrap.Tooltip(element)
+    });
+});
+</script>
+{% endblock %}
