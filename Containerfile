@@ -18,7 +18,8 @@ WORKDIR /app
 
 ENV PATH=/root/.local/bin:$PATH \
     FLASK_APP=run.py \
-    PORT=5000
+    PORT=5000 \
+    BASE_URL=horarios.curza.com.ar
 
 COPY --from=builder /root/.local /root/.local
 COPY . .

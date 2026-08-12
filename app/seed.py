@@ -3,10 +3,9 @@ from app import db
 from app.models import User, Carrera, Asignatura, EspacioFisico, BloqueHorario, Profesor, ConfiguracionSistema
 
 def seed_database():
-    """Puebla la base de datos con los usuarios base, plantilla docente completa y los horarios oficiales del 1er y 2do cuatrimestres para TUASSL y TUDW."""
+    """Puebla la base de datos con los usuarios base, plantilla docente completa y los horarios oficiales del 1er y 2do cuatrimestres para TUASSL y TUDW basados en la documentación de horarios 2026."""
     
     # Libera transacciones/sesiones previas para no bloquear el DROP TABLE
-    # (en MariaDB/MySQL una transacción abierta retiene el metadata lock).
     db.session.rollback()
     db.session.remove()
 
@@ -27,7 +26,7 @@ def seed_database():
     p_fede = Profesor(nombre_completo='Federico Blicharski', categoria_habitual='AYP', email='federico.b@curza.com.ar')
     p_daher = Profesor(nombre_completo='Prof. Daher', categoria_habitual='PAD', email='daher@curza.com.ar')
 
-    # Docentes del 1er Cuatrimestre
+    # Docentes del 1er y 2do Cuatrimestre
     p_nadia = Profesor(nombre_completo='Nadia Riquelme', categoria_habitual='AYP', email='nadia.riquelme@curza.com.ar')
     p_karina = Profesor(nombre_completo='Karina Carrión', categoria_habitual='AYP', email='karina.carrion@curza.com.ar')
     p_enzo = Profesor(nombre_completo='Enzo Catrin', categoria_habitual='AYP', email='enzo.catrin@curza.com.ar')
@@ -39,10 +38,14 @@ def seed_database():
     p_eugenia = Profesor(nombre_completo='Eugenia Alonso', categoria_habitual='PAD', email='eugenia.alonso@curza.com.ar')
     p_mileva = Profesor(nombre_completo='Mileva Honcharuk', categoria_habitual='AYP', email='mileva.h@curza.com.ar')
     p_cecilia = Profesor(nombre_completo='Cecilia Camera', categoria_habitual='PAD', email='cecilia.camera@curza.com.ar')
+    p_neri = Profesor(nombre_completo='Neri Castro', categoria_habitual='AYP', email='neri.castro@curza.com.ar')
+    p_ayelen = Profesor(nombre_completo='Ayelén Jara', categoria_habitual='AYP', email='ayelen.jara@curza.com.ar')
+    p_julian = Profesor(nombre_completo='Julián Díaz Varela', categoria_habitual='AYP', email='julian.diazvarela@curza.com.ar')
 
     db.session.add_all([
         p_ramiro, p_fabian, p_carolina, p_manuel, p_lucas, p_corujo, p_guerra, p_meloni, p_fede, p_daher,
-        p_nadia, p_karina, p_enzo, p_rosbaco, p_paula, p_lucas_m, p_romina, p_soledad, p_eugenia, p_mileva, p_cecilia
+        p_nadia, p_karina, p_enzo, p_rosbaco, p_paula, p_lucas_m, p_romina, p_soledad, p_eugenia, p_mileva,
+        p_cecilia, p_neri, p_ayelen, p_julian
     ])
     db.session.commit()
 
@@ -87,9 +90,9 @@ def seed_database():
     tuassl_it = Asignatura(carrera=tuassl, anio_cursada=1, cuatrimestre=1, codigo='TUASSL-103', nombre='Inglés Técnico', carga_horaria_semanal=4, profesor_pad=p_romina, profesores_ayp=[p_soledad])
 
     # 1° Año - 2° Cuatri
-    tuassl_ip = Asignatura(carrera=tuassl, anio_cursada=1, cuatrimestre=2, codigo='TUASSL-104', nombre='Introducción a la Programación', carga_horaria_semanal=8, profesor_pad=p_carolina, profesores_ayp=[p_manuel])
-    tuassl_ias = Asignatura(carrera=tuassl, anio_cursada=1, cuatrimestre=2, codigo='TUASSL-105', nombre='Introducción a la Administración de Sistemas', carga_horaria_semanal=4, profesor_pad=p_fabian)
-    tuassl_rd = Asignatura(carrera=tuassl, anio_cursada=1, cuatrimestre=2, codigo='TUASSL-106', nombre='Redes de Datos', carga_horaria_semanal=8, profesor_pad=p_fabian)
+    tuassl_ip = Asignatura(carrera=tuassl, anio_cursada=1, cuatrimestre=2, codigo='TUASSL-104', nombre='Introducción a la Programación', carga_horaria_semanal=8, profesor_pad=p_carolina, profesores_ayp=[p_manuel, p_neri, p_karina])
+    tuassl_ias = Asignatura(carrera=tuassl, anio_cursada=1, cuatrimestre=2, codigo='TUASSL-105', nombre='Introducción a la Administración de Sistemas', carga_horaria_semanal=4, profesor_pad=p_fabian, profesores_ayp=[p_nadia])
+    tuassl_rd = Asignatura(carrera=tuassl, anio_cursada=1, cuatrimestre=2, codigo='TUASSL-106', nombre='Redes de Datos', carga_horaria_semanal=8, profesor_pad=p_fabian, profesores_ayp=[p_karina, p_ayelen])
 
     # 2° Año - 1° Cuatri
     tuassl_sl = Asignatura(carrera=tuassl, anio_cursada=2, cuatrimestre=1, codigo='TUASSL-201', nombre='Software Libre', carga_horaria_semanal=4, profesor_pad=p_ramiro, profesores_ayp=[p_lucas])
@@ -97,7 +100,7 @@ def seed_database():
     tuassl_as = Asignatura(carrera=tuassl, anio_cursada=2, cuatrimestre=1, codigo='TUASSL-203', nombre='Administración de Sistemas', carga_horaria_semanal=8, profesor_pad=p_corujo, profesores_ayp=[p_fabian])
 
     # 2° Año - 2° Cuatri
-    tuassl_ase = Asignatura(carrera=tuassl, anio_cursada=2, cuatrimestre=2, codigo='TUASSL-204', nombre='Administración de Servicios', carga_horaria_semanal=8, profesor_pad=p_ramiro)
+    tuassl_ase = Asignatura(carrera=tuassl, anio_cursada=2, cuatrimestre=2, codigo='TUASSL-204', nombre='Administración de Servicios', carga_horaria_semanal=8, profesor_pad=p_ramiro, profesores_ayp=[p_fabian])
     tuassl_si = Asignatura(carrera=tuassl, anio_cursada=2, cuatrimestre=2, codigo='TUASSL-205', nombre='Sistemas de Información', carga_horaria_semanal=8, profesor_pad=p_corujo)
     tuassl_ays = Asignatura(carrera=tuassl, anio_cursada=2, cuatrimestre=2, codigo='TUASSL-206', nombre='Automatización y Scripting', carga_horaria_semanal=4, profesor_pad=p_ramiro, profesores_ayp=[p_lucas])
 
@@ -121,8 +124,8 @@ def seed_database():
 
     # 1° Año - 2° Cuatri
     tudw_pelw = Asignatura(carrera=tudw, anio_cursada=1, cuatrimestre=2, codigo='TUDW-104', nombre='Programación Estática y Laboratorio Web', carga_horaria_semanal=8, profesor_pad=p_ramiro)
-    tudw_ipoo = Asignatura(carrera=tudw, anio_cursada=1, cuatrimestre=2, codigo='TUDW-105', nombre='Introducción a la Programación Orientada a Objetos', carga_horaria_semanal=8, profesor_pad=p_guerra)
-    tudw_cbd = Asignatura(carrera=tudw, anio_cursada=1, cuatrimestre=2, codigo='TUDW-106', nombre='Conceptos de Bases de Datos', carga_horaria_semanal=4, profesor_pad=p_corujo)
+    tudw_ipoo = Asignatura(carrera=tudw, anio_cursada=1, cuatrimestre=2, codigo='TUDW-105', nombre='Introducción a la Programación Orientada a Objetos', carga_horaria_semanal=8, profesor_pad=p_guerra, profesores_ayp=[p_julian])
+    tudw_cbd = Asignatura(carrera=tudw, anio_cursada=1, cuatrimestre=2, codigo='TUDW-106', nombre='Conceptos de Bases de Datos', carga_horaria_semanal=4, profesor_pad=p_corujo, profesores_ayp=[p_fede])
 
     # 2° Año - 1° Cuatri
     tudw_asc = Asignatura(carrera=tudw, anio_cursada=2, cuatrimestre=1, codigo='TUDW-201', nombre='Arquitectura y Seguridad de Computadoras', carga_horaria_semanal=8, profesor_pad=p_fabian)
@@ -153,7 +156,7 @@ def seed_database():
     db.session.commit()
 
     # =========================================================================
-    # 5. BLOQUES HORARIOS - 1ER CUATRIMESTRE (OFICIAL SEGÚN PLANILLA CURZAS)
+    # 5. BLOQUES HORARIOS - 1ER CUATRIMESTRE (OFICIAL SEGÚN ARCHIVOS MARKDOWN 2026)
     # =========================================================================
 
     # --- TUASSL 1er Año - 1° Cuatri ---
@@ -195,7 +198,7 @@ def seed_database():
     b_tuassl_el2 = BloqueHorario(asignatura=tuassl_el, espacio_fisico=None, profesor=p_cecilia, rol_docente='PAD', dia_semana=2, hora_inicio=time(16,0), hora_fin=time(17,0), duracion_horas=1.0, tipo='Práctica', modalidad='Virtual', es_sincronico=True, observaciones='Sincrónico 100% Virtual')
     db.session.add_all([b_tuassl_el1, b_tuassl_el2])
 
-    b_tuassl_asa1 = BloqueHorario(asignatura=tuassl_asa, espacio_fisico=None, profesor=p_ramiro, rol_docente='PAD', dia_semana=1, hora_inicio=time(17,0), hora_fin=time(19,0), duracion_horas=2.0, tipo='Teoría', modalidad='Virtual', es_sincronico=True, observaciones='Sincrónico 100% Virtual')
+    b_tuassl_asa1 = BloqueHorario(asignatura=tuassl_asa, espacio_fisico=None, profesor=p_ramiro, rol_docente='PAD', dia_semana=2, hora_inicio=time(17,0), hora_fin=time(19,0), duracion_horas=2.0, tipo='Teoría', modalidad='Virtual', es_sincronico=True, observaciones='Sincrónico 100% Virtual')
     b_tuassl_asa2 = BloqueHorario(asignatura=tuassl_asa, espacio_fisico=s2, profesor=p_ramiro, rol_docente='PAD', dia_semana=3, hora_inicio=time(17,0), hora_fin=time(19,0), duracion_horas=2.0, tipo='Taller', modalidad='Presencial', es_sincronico=True, observaciones='Sincrónico Presencial Sala 2 (JColombo)')
     b_tuassl_asa3 = BloqueHorario(asignatura=tuassl_asa, espacio_fisico=None, profesor=p_ramiro, rol_docente='PAD', dia_semana=4, hora_inicio=time(16,0), hora_fin=time(17,0), duracion_horas=1.0, tipo='Consulta', modalidad='Virtual', es_sincronico=True, observaciones='Consulta Virtual Sincrónica')
     b_tuassl_asa4 = BloqueHorario(asignatura=tuassl_asa, espacio_fisico=None, profesor=p_ramiro, rol_docente='PAD', dia_semana=4, hora_inicio=time(0,0), hora_fin=time(0,0), duracion_horas=3.0, tipo='Plataforma Asincrónica', modalidad='Asincrónico (PEDCO)', es_sincronico=False)
@@ -240,36 +243,77 @@ def seed_database():
     b_tudw_fi3 = BloqueHorario(asignatura=tudw_fi, espacio_fisico=None, profesor=p_meloni, rol_docente='PAD', dia_semana=4, hora_inicio=time(0,0), hora_fin=time(0,0), duracion_horas=6.0, tipo='Plataforma Asincrónica', modalidad='Asincrónico (PEDCO)', es_sincronico=False)
     db.session.add_all([b_tudw_fi1, b_tudw_fi2, b_tudw_fi3])
 
+    b_tudw_tf1 = BloqueHorario(asignatura=tudw_tf, espacio_fisico=None, profesor=p_meloni, rol_docente='PAD', dia_semana=1, hora_inicio=time(18,0), hora_fin=time(20,0), duracion_horas=2.0, tipo='Teoría', modalidad='Virtual', es_sincronico=True, observaciones='Sincrónico 100% Virtual')
+    b_tudw_tf2 = BloqueHorario(asignatura=tudw_tf, espacio_fisico=None, profesor=p_meloni, rol_docente='PAD', dia_semana=4, hora_inicio=time(18,0), hora_fin=time(20,0), duracion_horas=2.0, tipo='Práctica', modalidad='Virtual', es_sincronico=True, observaciones='Sincrónico 100% Virtual')
+    b_tudw_tf3 = BloqueHorario(asignatura=tudw_tf, espacio_fisico=None, profesor=p_meloni, rol_docente='PAD', dia_semana=4, hora_inicio=time(0,0), hora_fin=time(0,0), duracion_horas=6.0, tipo='Plataforma Asincrónica', modalidad='Asincrónico (PEDCO)', es_sincronico=False)
+    db.session.add_all([b_tudw_tf1, b_tudw_tf2, b_tudw_tf3])
+
     # =========================================================================
-    # 6. BLOQUES HORARIOS - 2DO CUATRIMESTRE (OFICIAL)
+    # 6. BLOQUES HORARIOS - 2DO CUATRIMESTRE (OFICIAL SEGÚN ARCHIVOS MARKDOWN 2026)
     # =========================================================================
-    b_ip1 = BloqueHorario(asignatura=tuassl_ip, espacio_fisico=s1, profesor=p_manuel, rol_docente='AYP', dia_semana=0, hora_inicio=time(15,0), hora_fin=time(17,0), duracion_horas=2.0, tipo='Taller', modalidad='Híbrido', es_sincronico=True, observaciones='Práctica / Taller - Ayudante Manuel Jove (AYP)')
-    b_ip2 = BloqueHorario(asignatura=tuassl_ip, espacio_fisico=s1, profesor=p_manuel, rol_docente='AYP', dia_semana=2, hora_inicio=time(15,0), hora_fin=time(17,0), duracion_horas=2.0, tipo='Taller', modalidad='Híbrido', es_sincronico=True, observaciones='Práctica / Taller - Ayudante Manuel Jove (AYP)')
-    b_ip3 = BloqueHorario(asignatura=tuassl_ip, espacio_fisico=None, profesor=p_carolina, rol_docente='PAD', dia_semana=3, hora_inicio=time(17,0), hora_fin=time(18,0), duracion_horas=1.0, tipo='Teoría', modalidad='Virtual', es_sincronico=True, observaciones='Teoría - Prof. Adjunta Carolina Juárez (PAD)')
+    # --- TUASSL 1er Año - 2° Cuatri ---
+    b_ip1 = BloqueHorario(asignatura=tuassl_ip, espacio_fisico=s1, profesor=p_carolina, rol_docente='PAD', dia_semana=0, hora_inicio=time(16,0), hora_fin=time(18,0), duracion_horas=2.0, tipo='Taller', modalidad='Presencial', es_sincronico=True, observaciones='Sincrónico Sala Brocca (JCBrocca)')
+    b_ip2 = BloqueHorario(asignatura=tuassl_ip, espacio_fisico=s1, profesor=p_carolina, rol_docente='PAD', dia_semana=2, hora_inicio=time(16,0), hora_fin=time(18,0), duracion_horas=2.0, tipo='Taller', modalidad='Presencial', es_sincronico=True, observaciones='Sincrónico Sala Brocca (JCBrocca)')
+    b_ip3 = BloqueHorario(asignatura=tuassl_ip, espacio_fisico=None, profesor=p_carolina, rol_docente='PAD', dia_semana=3, hora_inicio=time(16,0), hora_fin=time(17,0), duracion_horas=1.0, tipo='Teoría', modalidad='Virtual', es_sincronico=True, observaciones='Sincrónico Virtual')
     b_ip4 = BloqueHorario(asignatura=tuassl_ip, espacio_fisico=None, profesor=p_carolina, rol_docente='PAD', dia_semana=4, hora_inicio=time(0,0), hora_fin=time(0,0), duracion_horas=3.0, tipo='Plataforma Asincrónica', modalidad='Asincrónico (PEDCO)', es_sincronico=False)
     db.session.add_all([b_ip1, b_ip2, b_ip3, b_ip4])
 
-    b_ias1 = BloqueHorario(asignatura=tuassl_ias, espacio_fisico=s1, profesor=p_fabian, rol_docente='PAD', dia_semana=1, hora_inicio=time(15,0), hora_fin=time(17,0), duracion_horas=2.0, tipo='Taller', modalidad='Híbrido', es_sincronico=True, observaciones='Taller - Prof. Adjunto Fabián Imberti (PAD)')
-    b_ias2 = BloqueHorario(asignatura=tuassl_ias, espacio_fisico=None, profesor=p_fabian, rol_docente='PAD', dia_semana=3, hora_inicio=time(18,30), hora_fin=time(20,30), duracion_horas=2.0, tipo='Teoría', modalidad='Virtual', es_sincronico=True)
+    b_ias1 = BloqueHorario(asignatura=tuassl_ias, espacio_fisico=None, profesor=p_fabian, rol_docente='PAD', dia_semana=3, hora_inicio=time(18,0), hora_fin=time(20,0), duracion_horas=2.0, tipo='Teoría', modalidad='Virtual', es_sincronico=True, observaciones='Sincrónico Virtual')
+    b_ias2 = BloqueHorario(asignatura=tuassl_ias, espacio_fisico=s1, profesor=p_fabian, rol_docente='PAD', dia_semana=4, hora_inicio=time(16,0), hora_fin=time(18,0), duracion_horas=2.0, tipo='Taller', modalidad='Presencial', es_sincronico=True, observaciones='Sincrónico Sala Brocca (JCBrocca)')
     db.session.add_all([b_ias1, b_ias2])
 
-    b_rd1 = BloqueHorario(asignatura=tuassl_rd, espacio_fisico=s1, profesor=p_fabian, rol_docente='PAD', dia_semana=0, hora_inicio=time(17,0), hora_fin=time(19,0), duracion_horas=2.0, tipo='Taller', modalidad='Híbrido', es_sincronico=True, observaciones='Taller - Prof. Adjunto Fabián Imberti (PAD)')
-    b_rd2 = BloqueHorario(asignatura=tuassl_rd, espacio_fisico=None, profesor=p_fabian, rol_docente='PAD', dia_semana=1, hora_inicio=time(17,0), hora_fin=time(19,0), duracion_horas=2.0, tipo='Teoría', modalidad='Virtual', es_sincronico=True)
-    b_rd3 = BloqueHorario(asignatura=tuassl_rd, espacio_fisico=None, profesor=p_fabian, rol_docente='PAD', dia_semana=4, hora_inicio=time(0,0), hora_fin=time(0,0), duracion_horas=4.0, tipo='Plataforma Asincrónica', modalidad='Asincrónico (PEDCO)', es_sincronico=False)
-    db.session.add_all([b_rd1, b_rd2, b_rd3])
+    b_rd1 = BloqueHorario(asignatura=tuassl_rd, espacio_fisico=s1, profesor=p_fabian, rol_docente='PAD', dia_semana=0, hora_inicio=time(18,0), hora_fin=time(20,0), duracion_horas=2.0, tipo='Taller', modalidad='Presencial', es_sincronico=True, observaciones='Sincrónico Sala Brocca (JCBrocca)')
+    b_rd2 = BloqueHorario(asignatura=tuassl_rd, espacio_fisico=None, profesor=p_fabian, rol_docente='PAD', dia_semana=1, hora_inicio=time(18,0), hora_fin=time(20,0), duracion_horas=2.0, tipo='Teoría', modalidad='Virtual', es_sincronico=True, observaciones='Sincrónico Virtual')
+    b_rd3 = BloqueHorario(asignatura=tuassl_rd, espacio_fisico=None, profesor=p_fabian, rol_docente='PAD', dia_semana=4, hora_inicio=time(18,0), hora_fin=time(20,0), duracion_horas=2.0, tipo='Práctica', modalidad='Virtual', es_sincronico=True, observaciones='Sincrónico Virtual')
+    b_rd4 = BloqueHorario(asignatura=tuassl_rd, espacio_fisico=None, profesor=p_fabian, rol_docente='PAD', dia_semana=4, hora_inicio=time(0,0), hora_fin=time(0,0), duracion_horas=2.0, tipo='Plataforma Asincrónica', modalidad='Asincrónico (PEDCO)', es_sincronico=False)
+    db.session.add_all([b_rd1, b_rd2, b_rd3, b_rd4])
 
-    b_pelw1 = BloqueHorario(asignatura=tudw_pelw, espacio_fisico=s2, profesor=p_ramiro, rol_docente='PAD', dia_semana=0, hora_inicio=time(16,0), hora_fin=time(19,0), duracion_horas=3.0, tipo='Taller', modalidad='Presencial', es_sincronico=True, observaciones='Teoría / Taller - Prof. Ramiro García Poggi (PAD)')
-    b_pelw2 = BloqueHorario(asignatura=tudw_pelw, espacio_fisico=s1, profesor=p_ramiro, rol_docente='PAD', dia_semana=3, hora_inicio=time(17,0), hora_fin=time(19,0), duracion_horas=2.0, tipo='Taller', modalidad='Presencial', es_sincronico=True, observaciones='Práctica - Prof. Ramiro García Poggi (PAD)')
-    b_pelw3 = BloqueHorario(asignatura=tudw_pelw, espacio_fisico=None, profesor=p_ramiro, rol_docente='PAD', dia_semana=4, hora_inicio=time(0,0), hora_fin=time(0,0), duracion_horas=3.0, tipo='Plataforma Asincrónica', modalidad='Asincrónico (PEDCO)', es_sincronico=False)
-    db.session.add_all([b_pelw1, b_pelw2, b_pelw3])
+    # --- TUASSL 2do Año - 2° Cuatri ---
+    b_ase1 = BloqueHorario(asignatura=tuassl_ase, espacio_fisico=None, profesor=p_ramiro, rol_docente='PAD', dia_semana=1, hora_inicio=time(16,0), hora_fin=time(18,0), duracion_horas=2.0, tipo='Teoría', modalidad='Virtual', es_sincronico=True, observaciones='Sincrónico Virtual')
+    b_ase2 = BloqueHorario(asignatura=tuassl_ase, espacio_fisico=None, profesor=p_ramiro, rol_docente='PAD', dia_semana=2, hora_inicio=time(18,0), hora_fin=time(20,0), duracion_horas=2.0, tipo='Práctica', modalidad='Virtual', es_sincronico=True, observaciones='Sincrónico Virtual')
+    b_ase3 = BloqueHorario(asignatura=tuassl_ase, espacio_fisico=None, profesor=p_ramiro, rol_docente='PAD', dia_semana=4, hora_inicio=time(18,0), hora_fin=time(19,0), duracion_horas=1.0, tipo='Consulta', modalidad='Virtual', es_sincronico=True, observaciones='Sincrónico Consultas')
+    b_ase4 = BloqueHorario(asignatura=tuassl_ase, espacio_fisico=None, profesor=p_ramiro, rol_docente='PAD', dia_semana=4, hora_inicio=time(0,0), hora_fin=time(0,0), duracion_horas=3.0, tipo='Plataforma Asincrónica', modalidad='Asincrónico (PEDCO)', es_sincronico=False)
+    db.session.add_all([b_ase1, b_ase2, b_ase3, b_ase4])
 
-    b_ays1 = BloqueHorario(asignatura=tuassl_ays, espacio_fisico=s2, profesor=p_ramiro, rol_docente='AYP', dia_semana=2, hora_inicio=time(17,0), hora_fin=time(19,0), duracion_horas=2.0, tipo='Práctica', modalidad='Presencial', es_sincronico=True, observaciones='Práctica / Scripting - Ayudante Ramiro García Poggi (AYP)')
-    db.session.add(b_ays1)
+    b_si1 = BloqueHorario(asignatura=tuassl_si, espacio_fisico=None, profesor=p_corujo, rol_docente='PAD', dia_semana=0, hora_inicio=time(18,0), hora_fin=time(20,0), duracion_horas=2.0, tipo='Teoría', modalidad='Virtual', es_sincronico=True, observaciones='Sincrónico Virtual')
+    b_si2 = BloqueHorario(asignatura=tuassl_si, espacio_fisico=None, profesor=p_corujo, rol_docente='PAD', dia_semana=2, hora_inicio=time(16,0), hora_fin=time(18,0), duracion_horas=2.0, tipo='Práctica', modalidad='Virtual', es_sincronico=True, observaciones='Sincrónico Virtual')
+    b_si3 = BloqueHorario(asignatura=tuassl_si, espacio_fisico=None, profesor=p_corujo, rol_docente='PAD', dia_semana=4, hora_inicio=time(18,0), hora_fin=time(19,0), duracion_horas=1.0, tipo='Consulta', modalidad='Virtual', es_sincronico=True, observaciones='Sincrónico Virtual')
+    b_si4 = BloqueHorario(asignatura=tuassl_si, espacio_fisico=None, profesor=p_corujo, rol_docente='PAD', dia_semana=4, hora_inicio=time(0,0), hora_fin=time(0,0), duracion_horas=3.0, tipo='Plataforma Asincrónica', modalidad='Asincrónico (PEDCO)', es_sincronico=False)
+    db.session.add_all([b_si1, b_si2, b_si3, b_si4])
 
-    b_cbd1 = BloqueHorario(asignatura=tudw_cbd, espacio_fisico=None, profesor=p_corujo, rol_docente='PAD', dia_semana=1, hora_inicio=time(18,0), hora_fin=time(20,0), duracion_horas=2.0, tipo='Teoría', modalidad='Virtual', es_sincronico=True)
-    b_cbd2 = BloqueHorario(asignatura=tudw_cbd, espacio_fisico=s1, profesor=p_corujo, rol_docente='PAD', dia_semana=2, hora_inicio=time(19,0), hora_fin=time(21,0), duracion_horas=2.0, tipo='Práctica', modalidad='Híbrido', es_sincronico=True)
+    b_ays1 = BloqueHorario(asignatura=tuassl_ays, espacio_fisico=s2, profesor=p_ramiro, rol_docente='PAD', dia_semana=3, hora_inicio=time(16,0), hora_fin=time(18,0), duracion_horas=2.0, tipo='Práctica', modalidad='Presencial', es_sincronico=True, observaciones='Sincrónico Sala Colombo (JColombo)')
+    b_ays2 = BloqueHorario(asignatura=tuassl_ays, espacio_fisico=s2, profesor=p_ramiro, rol_docente='PAD', dia_semana=4, hora_inicio=time(16,0), hora_fin=time(18,0), duracion_horas=2.0, tipo='Práctica', modalidad='Presencial', es_sincronico=True, observaciones='Sincrónico Sala Colombo (JColombo)')
+    db.session.add_all([b_ays1, b_ays2])
+
+    # --- TUDW 1er Año - 2° Cuatri ---
+    b_pelw1 = BloqueHorario(asignatura=tudw_pelw, espacio_fisico=s2, profesor=p_ramiro, rol_docente='PAD', dia_semana=0, hora_inicio=time(16,0), hora_fin=time(18,0), duracion_horas=2.0, tipo='Taller', modalidad='Presencial', es_sincronico=True, observaciones='Sala Colombo (JColombo)')
+    b_pelw2 = BloqueHorario(asignatura=tudw_pelw, espacio_fisico=s1, profesor=p_ramiro, rol_docente='PAD', dia_semana=3, hora_inicio=time(18,0), hora_fin=time(20,0), duracion_horas=2.0, tipo='Taller', modalidad='Presencial', es_sincronico=True, observaciones='Sala Brocca (JCBrocca)')
+    b_pelw3 = BloqueHorario(asignatura=tudw_pelw, espacio_fisico=None, profesor=p_ramiro, rol_docente='PAD', dia_semana=4, hora_inicio=time(19,0), hora_fin=time(20,0), duracion_horas=1.0, tipo='Consulta', modalidad='Virtual', es_sincronico=True, observaciones='Consulta Virtual')
+    b_pelw4 = BloqueHorario(asignatura=tudw_pelw, espacio_fisico=None, profesor=p_ramiro, rol_docente='PAD', dia_semana=4, hora_inicio=time(0,0), hora_fin=time(0,0), duracion_horas=3.0, tipo='Plataforma Asincrónica', modalidad='Asincrónico (PEDCO)', es_sincronico=False)
+    db.session.add_all([b_pelw1, b_pelw2, b_pelw3, b_pelw4])
+
+    b_ipoo1 = BloqueHorario(asignatura=tudw_ipoo, espacio_fisico=None, profesor=p_guerra, rol_docente='PAD', dia_semana=1, hora_inicio=time(16,0), hora_fin=time(17,0), duracion_horas=1.0, tipo='Teoría', modalidad='Virtual', es_sincronico=True, observaciones='Sincrónico Virtual')
+    b_ipoo2 = BloqueHorario(asignatura=tudw_ipoo, espacio_fisico=None, profesor=p_guerra, rol_docente='PAD', dia_semana=2, hora_inicio=time(18,0), hora_fin=time(20,0), duracion_horas=2.0, tipo='Práctica', modalidad='Virtual', es_sincronico=True, observaciones='Sincrónico Virtual')
+    b_ipoo3 = BloqueHorario(asignatura=tudw_ipoo, espacio_fisico=s1, profesor=p_guerra, rol_docente='PAD', dia_semana=3, hora_inicio=time(16,0), hora_fin=time(18,0), duracion_horas=2.0, tipo='Taller', modalidad='Presencial', es_sincronico=True, observaciones='Sincrónico Sala Brocca (JCBrocca)')
+    b_ipoo4 = BloqueHorario(asignatura=tudw_ipoo, espacio_fisico=None, profesor=p_guerra, rol_docente='PAD', dia_semana=4, hora_inicio=time(0,0), hora_fin=time(0,0), duracion_horas=3.0, tipo='Plataforma Asincrónica', modalidad='Asincrónico (PEDCO)', es_sincronico=False)
+    db.session.add_all([b_ipoo1, b_ipoo2, b_ipoo3, b_ipoo4])
+
+    b_cbd1 = BloqueHorario(asignatura=tudw_cbd, espacio_fisico=None, profesor=p_corujo, rol_docente='PAD', dia_semana=1, hora_inicio=time(18,0), hora_fin=time(20,0), duracion_horas=2.0, tipo='Teoría', modalidad='Virtual', es_sincronico=True, observaciones='Sincrónico Virtual')
+    b_cbd2 = BloqueHorario(asignatura=tudw_cbd, espacio_fisico=None, profesor=p_corujo, rol_docente='PAD', dia_semana=4, hora_inicio=time(0,0), hora_fin=time(0,0), duracion_horas=2.0, tipo='Plataforma Asincrónica', modalidad='Asincrónico (PEDCO)', es_sincronico=False)
     db.session.add_all([b_cbd1, b_cbd2])
 
+    # --- TUDW 2do Año - 2° Cuatri ---
+    b_pwa1 = BloqueHorario(asignatura=tudw_pwa, espacio_fisico=None, profesor=p_meloni, rol_docente='PAD', dia_semana=1, hora_inicio=time(16,0), hora_fin=time(19,0), duracion_horas=3.0, tipo='Teoría', modalidad='Virtual', es_sincronico=True, observaciones='Sincrónico')
+    b_pwa2 = BloqueHorario(asignatura=tudw_pwa, espacio_fisico=None, profesor=p_meloni, rol_docente='PAD', dia_semana=3, hora_inicio=time(16,0), hora_fin=time(19,0), duracion_horas=3.0, tipo='Práctica', modalidad='Virtual', es_sincronico=True, observaciones='Virtual')
+    b_pwa3 = BloqueHorario(asignatura=tudw_pwa, espacio_fisico=None, profesor=p_meloni, rol_docente='PAD', dia_semana=4, hora_inicio=time(0,0), hora_fin=time(0,0), duracion_horas=4.0, tipo='Plataforma Asincrónica', modalidad='Asincrónico (PEDCO)', es_sincronico=False)
+    db.session.add_all([b_pwa1, b_pwa2, b_pwa3])
+
+    b_adds1 = BloqueHorario(asignatura=tudw_adds, espacio_fisico=None, profesor=p_fede, rol_docente='AYP', dia_semana=0, hora_inicio=time(17,0), hora_fin=time(19,0), duracion_horas=2.0, tipo='Teoría', modalidad='Virtual', es_sincronico=True, observaciones='Virtual')
+    b_adds2 = BloqueHorario(asignatura=tudw_adds, espacio_fisico=s2, profesor=p_fede, rol_docente='AYP', dia_semana=4, hora_inicio=time(18,0), hora_fin=time(20,0), duracion_horas=2.0, tipo='Práctica', modalidad='Presencial', es_sincronico=True, observaciones='Sincrónico Sala Colombo (JColombo)')
+    b_adds3 = BloqueHorario(asignatura=tudw_adds, espacio_fisico=None, profesor=p_fede, rol_docente='AYP', dia_semana=4, hora_inicio=time(0,0), hora_fin=time(0,0), duracion_horas=4.0, tipo='Plataforma Asincrónica', modalidad='Asincrónico (PEDCO)', es_sincronico=False)
+    db.session.add_all([b_adds1, b_adds2, b_adds3])
+
+    # --- Bloqueos Externos ---
     b_ext1 = BloqueHorario(asignatura=ext_est, espacio_fisico=s1, profesor=p_daher, rol_docente='PAD', dia_semana=1, hora_inicio=time(13,0), hora_fin=time(15,0), duracion_horas=2.0, tipo='Bloqueo Externo', modalidad='Bloqueo Aula', es_sincronico=True, es_bloqueo_externo=True, observaciones='Reserva Externa: Estadística Aplicada')
     b_ext2 = BloqueHorario(asignatura=ext_est, espacio_fisico=s2, profesor=p_daher, rol_docente='PAD', dia_semana=3, hora_inicio=time(15,30), hora_fin=time(18,30), duracion_horas=3.0, tipo='Bloqueo Externo', modalidad='Bloqueo Aula', es_sincronico=True, es_bloqueo_externo=True, observaciones='Reserva Externa: Estadística Aplicada')
     b_ext3 = BloqueHorario(asignatura=ext_eagr, espacio_fisico=a18, profesor=p_daher, rol_docente='PAD', dia_semana=3, hora_inicio=time(18,30), hora_fin=time(21,30), duracion_horas=3.0, tipo='Bloqueo Externo', modalidad='Bloqueo Aula', es_sincronico=True, es_bloqueo_externo=True, observaciones='Reserva Externa: Estadística Agropecuaria')
@@ -283,7 +327,7 @@ def seed_database():
     db.session.add(config)
 
     db.session.commit()
-    print("✅ Base de datos poblada exitosamente con planes y horarios de 1er y 2do cuatrimestres.")
+    print("✅ Base de datos poblada exitosamente con planes y horarios de 1er y 2do cuatrimestres actualizados según 2026.")
 
 
 if __name__ == '__main__':

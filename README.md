@@ -169,6 +169,7 @@ Los valores por defecto se pueden sobrescribir exportando variables en el entorn
 | `DB_PORT` | Puerto del host para acceder a MariaDB | `3306` |
 | `APP_PORT` | Puerto del host para acceder a la aplicación | `5000` |
 | `SECRET_KEY` | Clave de firma de sesiones de Flask | `cambiar-clave-secreta-curzas-2026` |
+| `BASE_URL` | URL base o dominio principal del sitio | `horarios.curza.com.ar` |
 | `OAUTH_CLIENT_ID` | ID de cliente de Google OAuth 2.0 | *(vacío)* |
 | `OAUTH_CLIENT_SECRET` | Secreto de cliente de Google OAuth 2.0 | *(vacío)* |
 

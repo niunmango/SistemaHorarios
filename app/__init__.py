@@ -27,10 +27,20 @@ def _wait_for_db(app, attempts=30, delay=2):
 def create_app(test_config=None):
     app = Flask(__name__, instance_relative_config=True)
     
+    base_url_env = os.environ.get('BASE_URL', 'horarios.curza.com.ar').strip()
+    if base_url_env.startswith(('http://', 'https://')):
+        full_base_url = base_url_env
+        base_url_domain = base_url_env.split('://', 1)[1].rstrip('/')
+    else:
+        base_url_domain = base_url_env.rstrip('/')
+        full_base_url = f"https://{base_url_domain}"
+
     app.config.from_mapping(
         SECRET_KEY=os.environ.get('SECRET_KEY', 'dev-secret-key-curzas-horarios-2026'),
         SQLALCHEMY_DATABASE_URI=os.environ.get('DATABASE_URL', f"sqlite:///{os.path.join(app.instance_path, 'sistema_horarios.db')}"),
         SQLALCHEMY_TRACK_MODIFICATIONS=False,
+        BASE_URL=base_url_domain,
+        FULL_BASE_URL=full_base_url,
         OAUTH_CLIENT_ID=os.environ.get('OAUTH_CLIENT_ID', ''),
         OAUTH_CLIENT_SECRET=os.environ.get('OAUTH_CLIENT_SECRET', ''),
     )
@@ -72,12 +82,14 @@ def create_app(test_config=None):
 
     @app.context_processor
     def inject_system_config():
+        base_url_val = app.config.get('BASE_URL', 'horarios.curza.com.ar')
+        full_base_url_val = app.config.get('FULL_BASE_URL', 'https://horarios.curza.com.ar')
         try:
             from app.models import ConfiguracionSistema
             config = ConfiguracionSistema.get_config()
-            return dict(config=config)
+            return dict(config=config, base_url=base_url_val, full_base_url=full_base_url_val)
         except Exception:
-            return dict(config=None)
+            return dict(config=None, base_url=base_url_val, full_base_url=full_base_url_val)
 
     with app.app_context():
         with _db_init_lock:

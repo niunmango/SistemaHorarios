@@ -241,6 +241,20 @@ class TestSistemaHorariosRules(unittest.TestCase):
         self.assertFalse(data['success'])
         self.assertIn('No hay cambios previos', data['error'])
 
+    def test_base_url_configuracion_defecto_y_personalizado(self):
+        # 1. Verificar valor por defecto
+        self.assertEqual(self.app.config['BASE_URL'], 'horarios.curza.com.ar')
+        self.assertEqual(self.app.config['FULL_BASE_URL'], 'https://horarios.curza.com.ar')
+
+        # 2. Verificar sobreescritura con custom BASE_URL
+        custom_app = create_app({
+            'TESTING': True,
+            'BASE_URL': 'mihorario.ejemplo.edu.ar',
+            'FULL_BASE_URL': 'https://mihorario.ejemplo.edu.ar'
+        })
+        self.assertEqual(custom_app.config['BASE_URL'], 'mihorario.ejemplo.edu.ar')
+        self.assertEqual(custom_app.config['FULL_BASE_URL'], 'https://mihorario.ejemplo.edu.ar')
+
 
 if __name__ == '__main__':
     unittest.main()
