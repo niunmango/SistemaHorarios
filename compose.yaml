@@ -16,7 +16,7 @@
 #
 # Variables de entorno configurables (exportar antes de "up"):
 #   MARIADB_DATABASE, MARIADB_USER, MARIADB_PASSWORD, MARIADB_ROOT_PASSWORD,
-#   DB_SUBNET, DB_IP, APP_PORT, SECRET_KEY, BASE_URL, OAUTH_CLIENT_ID, OAUTH_CLIENT_SECRET
+#   DB_SUBNET, DB_IP, APP_PORT, SECRET_KEY, BASE_URL, APP_VERSION, OAUTH_CLIENT_ID, OAUTH_CLIENT_SECRET
 
 services:
   db:
@@ -55,6 +55,7 @@ services:
       SECRET_KEY: ${SECRET_KEY:-cambiar-clave-secreta-curzas-2026}
       DATABASE_URL: mysql+pymysql://${MARIADB_USER:-horarios}:${MARIADB_PASSWORD:-horarios_secreto}@${DB_IP:-172.30.0.10}:3306/${MARIADB_DATABASE:-sistema_horarios}?charset=utf8mb4
       BASE_URL: ${BASE_URL:-horarios.curza.com.ar}
+      APP_VERSION: ${APP_VERSION:-0.1.20260812161901}
       OAUTH_CLIENT_ID: ${OAUTH_CLIENT_ID:-}
       OAUTH_CLIENT_SECRET: ${OAUTH_CLIENT_SECRET:-}
     depends_on:

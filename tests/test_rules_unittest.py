@@ -255,6 +255,12 @@ class TestSistemaHorariosRules(unittest.TestCase):
         self.assertEqual(custom_app.config['BASE_URL'], 'mihorario.ejemplo.edu.ar')
         self.assertEqual(custom_app.config['FULL_BASE_URL'], 'https://mihorario.ejemplo.edu.ar')
 
+    def test_versionado_sistema(self):
+        from app.version import get_version
+        v = get_version()
+        self.assertTrue(v.startswith('0.1.'))
+        self.assertEqual(self.app.config['VERSION'], v)
+
 
 if __name__ == '__main__':
     unittest.main()

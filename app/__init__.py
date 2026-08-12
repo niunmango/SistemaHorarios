@@ -6,6 +6,8 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
 from authlib.integrations.flask_client import OAuth
 
+from app.version import get_version
+
 db = SQLAlchemy()
 login_manager = LoginManager()
 oauth = OAuth()
@@ -41,6 +43,7 @@ def create_app(test_config=None):
         SQLALCHEMY_TRACK_MODIFICATIONS=False,
         BASE_URL=base_url_domain,
         FULL_BASE_URL=full_base_url,
+        VERSION=get_version(),
         OAUTH_CLIENT_ID=os.environ.get('OAUTH_CLIENT_ID', ''),
         OAUTH_CLIENT_SECRET=os.environ.get('OAUTH_CLIENT_SECRET', ''),
     )
@@ -84,12 +87,13 @@ def create_app(test_config=None):
     def inject_system_config():
         base_url_val = app.config.get('BASE_URL', 'horarios.curza.com.ar')
         full_base_url_val = app.config.get('FULL_BASE_URL', 'https://horarios.curza.com.ar')
+        version_val = app.config.get('VERSION', get_version())
         try:
             from app.models import ConfiguracionSistema
             config = ConfiguracionSistema.get_config()
-            return dict(config=config, base_url=base_url_val, full_base_url=full_base_url_val)
+            return dict(config=config, base_url=base_url_val, full_base_url=full_base_url_val, version=version_val)
         except Exception:
-            return dict(config=None, base_url=base_url_val, full_base_url=full_base_url_val)
+            return dict(config=None, base_url=base_url_val, full_base_url=full_base_url_val, version=version_val)
 
     with app.app_context():
         with _db_init_lock:
