@@ -255,6 +255,7 @@ SistemaHorarios/
 ├── LICENSE                   # Licencia GNU General Public License v3.0 (GPLv3)
 ├── MANUAL_DE_USO.md          # Manual de Usuario detallado
 ├── README.md                 # Documentación principal del proyecto
+├── DATABASE_SCHEMA.md        # 🆕 Esquema completo de la base de datos (tablas, relaciones, tipos, migraciones)
 └── run.py                    # Punto de entrada de la aplicación
 ```
 
