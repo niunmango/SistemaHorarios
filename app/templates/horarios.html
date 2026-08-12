@@ -200,191 +200,113 @@
                                         </span>
                                     </div>
 
-                                    <!-- SMART HOVER POPOVER TOOLTIP (Hidden during print) -->
-                                    <div onclick="event.stopPropagation();" class="hidden group-hover:block absolute left-1/2 -translate-x-1/2 {% if is_bottom_row %}bottom-full mb-1 before:-bottom-3{% else %}top-full mt-1 before:-top-3{% endif %} w-72 p-3.5 bg-slate-950 border border-slate-700 rounded-xl shadow-2xl z-50 text-xs space-y-2 pointer-events-auto no-print before:absolute before:inset-x-0 before:h-4">
-                                        {% if es_conflicto %}
-                                        <div class="p-2.5 bg-rose-950/95 border border-rose-500 rounded-lg text-rose-100 text-[11px] space-y-1 shadow-lg">
-                                            <div class="font-extrabold flex items-center gap-1.5 text-rose-300">
-                                                <i class="fa-solid fa-triangle-exclamation text-amber-400 text-sm"></i>
-                                                <span>SOLAPAMIENTO DETECTADO</span>
-                                            </div>
-                                            {% if mapa_conflictos and mapa_conflictos.get(b.id) %}
-                                                {% for exp in mapa_conflictos.get(b.id) %}
-                                                    <p class="text-[10px] leading-snug font-medium text-rose-200 border-t border-rose-800/80 pt-1">{{ exp }}</p>
-                                                {% endfor %}
-                                            {% else %}
-                                                <p class="text-[10px] text-rose-200">Conflicto de horario o espacio físico.</p>
-                                            {% endif %}
-                                        </div>
-                                        {% endif %}
-
-                                        <div class="flex items-start justify-between border-b border-slate-800 pb-2">
-                                            <div>
-                                                <span class="px-2 py-0.5 text-[10px] font-bold rounded bg-blue-500/20 text-blue-300 border border-blue-500/30">
-                                                    {{ b.asignatura.carrera.codigo }} ({{ b.asignatura.anio_cursada }}° Año - {{ b.asignatura.cuatrimestre }}° Cuatri)
-                                                </span>
-                                                <h4 class="font-bold text-white text-sm mt-1 leading-snug">{{ b.asignatura.nombre }}</h4>
-                                            </div>
-                                        </div>
-
-                                        <div class="space-y-1 text-slate-300">
-                                            <p class="flex items-center gap-2">
-                                                <i class="fa-regular fa-clock text-blue-400 w-4"></i>
-                                                <span><strong>Horario:</strong> {{ b.hora_inicio.strftime('%H:%M') }} a {{ b.hora_fin.strftime('%H:%M') }} hs ({{ b.duracion_horas }}h)</span>
-                                            </p>
-                                            <p class="flex items-center gap-2">
-                                                <i class="fa-solid fa-chalkboard-user text-indigo-400 w-4"></i>
-                                                <span><strong>Docente a Cargo:</strong> {% if b.profesor %}<strong class="text-white">{{ b.profesor.nombre_completo }}</strong> <span class="px-1 bg-indigo-900 text-indigo-200 rounded font-mono text-[10px]">{{ b.rol_docente_label }}</span>{% else %}{{ b.asignatura.profesor_cargo or 'Sin asignar' }}{% endif %}</span>
-                                            </p>
-                                            <p class="flex items-center gap-2">
-                                                <i class="fa-solid fa-layer-group text-purple-400 w-4"></i>
-                                                <span><strong>Modalidad / Tipo:</strong> {{ b.modalidad }} ({{ b.tipo }})</span>
-                                            </p>
-                                            {% if b.espacio_fisico %}
-                                            <p class="flex items-center gap-2 text-emerald-300 font-semibold">
-                                                <i class="fa-solid fa-location-dot text-emerald-400 w-4"></i>
-                                                <span><strong>Aula:</strong> {{ b.espacio_fisico.nombre }}</span>
-                                            </p>
-                                            {% endif %}
-                                            {% if b.observaciones %}
-                                            <p class="text-[11px] text-slate-400 italic pt-1 border-t border-slate-800">
-                                                "{{ b.observaciones }}"
-                                            </p>
-                                            {% endif %}
-                                        </div>
-
-                                        {% if current_user.is_authenticated and current_user.puede_editar_bloque(b) %}
-                                        <div class="pt-2 border-t border-slate-800 flex items-center justify-between">
-                                            <a href="{{ url_for('main.editar_bloque', id=b.id) }}" class="px-2.5 py-1 bg-blue-600 hover:bg-blue-500 text-white font-bold text-[11px] rounded-lg shadow flex items-center gap-1 transition-all">
-                                                <i class="fa-solid fa-pen-to-square"></i> Editar / Reubicar
-                                            </a>
-
-                                            <form method="POST" action="{{ url_for('main.eliminar_bloque', id=b.id) }}" onsubmit="return confirm('¿Eliminar esta clase?');">
-                                                <button type="submit" class="text-rose-400 hover:text-rose-300 font-bold text-[11px] flex items-center gap-1">
-                                                    <i class="fa-solid fa-trash-can"></i> Eliminar
-                                                </button>
-                                            </form>
-                                        </div>
-                                        {% endif %}
+                                    <!-- BOTÓN DESHACER (oculto por defecto, visible con hover para usuarios con permisos) -->
+                                    <div class="absolute top-0.5 right-0.5 z-50 {% if can_drag %}group-hover:block block{% else %}hidden{% endif %}">
+                                        <button onclick="event.stopPropagation(); undoBloque({{ b.id }})"
+                                                class="p-1 bg-slate-900/90 hover:bg-slate-700 rounded text-yellow-400 border border-slate-600 shadow transition-all">
+                                            <i class="fa-solid fa-rotate-left text-[9px]"></i>
+                                        </button>
                                     </div>
-
                                 </div>
                             {% endfor %}
                             </div>
+                        {% else %}
+                            <!-- Empty cell indicator -->
+                            <div class="w-full h-full flex items-center justify-center text-[8px] text-slate-700"></div>
                         {% endif %}
 
                     </td>
                     {% endfor %}
+
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
     </div>
 
+    <!-- Undo Status Message Area -->
+    <div id="undo-mensaje" class="hidden fixed bottom-4 right-4 bg-slate-800 border-l-4 border-emerald-400 text-white p-4 rounded-lg shadow-2xl max-w-sm z-50">
+        <div class="flex items-start space-x-2">
+            <i class="fa-solid fa-check-circle text-emerald-400 mt-0.5"></i>
+            <div>
+                <p class="font-semibold text-sm">Acción completada</p>
+                <p id="undo-mensaje-texto" class="text-xs text-slate-300 mt-0.5"></p>
+            </div>
+            <button onclick="cerrarMensajeUndo()" class="ml-2 text-slate-400 hover:text-white">
+                <i class="fa-solid fa-times"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Undo Error Message Area -->
+    <div id="undo-error" class="hidden fixed bottom-4 right-4 bg-slate-800 border-l-4 border-rose-400 text-white p-4 rounded-lg shadow-2xl max-w-sm z-50">
+        <div class="flex items-start space-x-2">
+            <i class="fa-solid fa-exclamation-circle text-rose-400 mt-0.5"></i>
+            <div>
+                <p class="font-semibold text-sm">Error</p>
+                <p id="undo-error-texto" class="text-xs text-slate-300 mt-0.5"></p>
+            </div>
+            <button onclick="cerrarMensajeUndo()" class="ml-2 text-slate-400 hover:text-white">
+                <i class="fa-solid fa-times"></i>
+            </button>
+        </div>
+    </div>
+
 </div>
 
-<!-- DRAG & DROP SCRIPT FOR INTERACTIVE CLASS RE-LOCATION -->
+<!-- JavaScript para funcionalidad de deshacer -->
 <script>
-let draggedBlockId = null;
-let draggedBlockName = '';
-
-function onBlockDragStart(e, blockId, blockName, day, startTime) {
-    window.isDragging = true;
-    draggedBlockId = blockId;
-    draggedBlockName = blockName;
-    e.dataTransfer.effectAllowed = 'move';
-    e.dataTransfer.setData('text/plain', blockId);
+// Función para deshacer un bloque
+async function undoBloque(bloqueId) {
+    const btn = document.querySelector(`#block-card-${bloqueId} .fa-rotate-left`).closest('button');
+    if (btn) {
+        btn.innerHTML = '<i class="fa-solid fa-spinner text-[9px]"></i>';
+        btn.disabled = true;
+    }
     
-    const card = document.getElementById('block-card-' + blockId);
-    if (card) {
-        card.classList.add('opacity-40', 'ring-2', 'ring-blue-400');
-    }
-}
-
-function onBlockDragEnd(e) {
-    if (draggedBlockId) {
-        const card = document.getElementById('block-card-' + draggedBlockId);
-        if (card) {
-            card.classList.remove('opacity-40', 'ring-2', 'ring-blue-400');
-        }
-    }
-    draggedBlockId = null;
-    draggedBlockName = '';
-    setTimeout(() => { window.isDragging = false; }, 200);
-}
-
-function onCellDragOver(e) {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
-    e.currentTarget.classList.add('bg-blue-900/40', 'ring-2', 'ring-inset', 'ring-blue-400');
-}
-
-function onCellDragLeave(e) {
-    e.currentTarget.classList.remove('bg-blue-900/40', 'ring-2', 'ring-inset', 'ring-blue-400');
-}
-
-async function onCellDrop(e, targetDay, targetHour) {
-    e.preventDefault();
-    e.currentTarget.classList.remove('bg-blue-900/40', 'ring-2', 'ring-inset', 'ring-blue-400');
-
-    if (!draggedBlockId) return;
-    const blockId = draggedBlockId;
-
-    showToast(`Reubicando clase '${draggedBlockName}' al ${getDayName(targetDay)} ${targetHour}...`, 'info');
-
     try {
-        const response = await fetch(`/api/bloque/${blockId}/mover`, {
+        const response = await fetch(`/api/bloque/${bloqueId}/deshacer`, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                dia_semana: targetDay,
-                hora_inicio: targetHour
-            })
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'same-origin'
         });
-
-        const result = await response.json();
-
-        if (result.success) {
-            showToast(result.message, 'success');
-            setTimeout(() => { window.location.reload(); }, 600);
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            mostrarMensajeUndo(data.message, 'success');
+            // Recargar la página para reflejar los cambios
+            setTimeout(() => location.reload(), 1000);
         } else {
-            showToast(result.error || 'Conflicto detectado al reubicar la clase.', 'danger');
+            mostrarMensajeUndo(data.error || 'No se pudo deshacer el cambio.', 'error');
         }
-    } catch (err) {
-        showToast('Error de conexión con el servidor.', 'danger');
+    } catch (error) {
+        mostrarMensajeUndo('Error de conexión: ' + error.message, 'error');
+    }
+    
+    if (btn) {
+        btn.innerHTML = '<i class="fa-solid fa-rotate-left text-[9px]"></i>';
+        btn.disabled = false;
     }
 }
 
-function getDayName(dayIndex) {
-    const days = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes'];
-    return days[dayIndex] || 'Día';
-}
-
-function showToast(message, type = 'info') {
-    let toastContainer = document.getElementById('toast-container');
-    if (!toastContainer) {
-        toastContainer = document.createElement('div');
-        toastContainer.id = 'toast-container';
-        toastContainer.className = 'fixed top-5 right-5 z-50 flex flex-col space-y-2 max-w-md pointer-events-none no-print';
-        document.body.appendChild(toastContainer);
-    }
-
-    const toast = document.createElement('div');
-    const colorClasses = type === 'success' 
-        ? 'bg-emerald-900 border-emerald-500 text-emerald-100' 
-        : (type === 'danger' ? 'bg-rose-950 border-rose-500 text-rose-100 shadow-rose-950/80 shadow-2xl' : 'bg-blue-900 border-blue-500 text-blue-100');
-
-    toast.className = `px-4 py-3 border rounded-xl shadow-xl text-xs font-semibold flex items-center space-x-2 transition-all duration-300 transform translate-y-0 opacity-100 pointer-events-auto ${colorClasses}`;
-    toast.innerHTML = `<i class="fa-solid ${type === 'success' ? 'fa-circle-check text-emerald-400' : (type === 'danger' ? 'fa-triangle-exclamation text-rose-400 text-sm' : 'fa-spinner animate-spin text-blue-400')}"></i> <span>${message}</span>`;
-
-    toastContainer.appendChild(toast);
-
+function mostrarMensajeUndo(mensaje, tipo) {
+    const container = tipo === 'success' ? 'undo-mensaje' : 'undo-error';
+    const textoEl = document.getElementById(`${container}-texto`);
+    const containerEl = document.getElementById(container);
+    
+    textoEl.textContent = mensaje;
+    containerEl.classList.remove('hidden');
+    
+    // Auto-ocultar después de 5 segundos
     setTimeout(() => {
-        toast.classList.add('opacity-0', 'translate-y-2');
-        setTimeout(() => toast.remove(), 300);
-    }, 4000);
+        containerEl.classList.add('hidden');
+    }, 5000);
+}
+
+function cerrarMensajeUndo() {
+    document.getElementById('undo-mensaje').classList.add('hidden');
+    document.getElementById('undo-error').classList.add('hidden');
 }
 </script>
 {% endblock %}
