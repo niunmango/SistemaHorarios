@@ -44,31 +44,31 @@ class User(UserMixin, db.Model):
     # Vinculación opcional con una entidad Profesor
     profesor_id = db.Column(db.Integer, db.ForeignKey('profesores.id'), nullable=True)
     profesor = db.relationship('Profesor', backref='usuario_asociado', uselist=False)
-
+    
     created_at = db.Column(db.DateTime, default=utc_now)
-
+    
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
-
+    
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
-
+    
     @property
     def is_admin(self):
         return self.role == 'admin'
-
+    
     @property
     def is_gestor(self):
         return self.role in ['admin', 'gestor_aulas', 'gestor']
-
+    
     @property
     def is_docente(self):
         return self.role in ['admin', 'gestor_aulas', 'gestor', 'docente']
-
+    
     @property
     def is_alumno(self):
         return self.role == 'alumno'
-
+    
     def puede_editar_bloque(self, bloque):
         if self.is_gestor:
             return True
@@ -78,16 +78,52 @@ class User(UserMixin, db.Model):
             if bloque.profesor and self.nombre_completo.strip().lower() == bloque.profesor.nombre_completo.strip().lower():
                 return True
         return False
+    
+    def es_profesor_de_materia(self, profesor_id, asignatura_id):
+        """Verifica si el profesor (por ID) es PAD o AYP de la materia dada."""
+        from app.models import Asignatura
+        asig = db.session.get(Asignatura, asignatura_id)
+        if not asig:
+            return False
+        # PAD
+        if asig.profesor_pad_id == profesor_id:
+            return True
+        # AYP
+        for ayp in asig.profesores_ayp:
+            if ayp.id == profesor_id:
+                return True
+        return False
+    
+    def puede_editar_bloque_automatico(self, bloque):
+        """
+        Devuelve True si el usuario (docente PAD/AYP) puede editar SIN aprobación:
+        solo si el bloque es de SU materia. Si es de otra materia, requiere aprobación.
+        """
+        if self.is_gestor:
+            return True  # Gestores pueden editar todo sin aprobación
+        
+        if self.role == 'docente' and bloque:
+            # Obtener profesor_id del usuario actual
+            my_prof_id = self.profesor_id
+            if my_prof_id is None and self.profesor:
+                my_prof_id = self.profesor.id
+            if my_prof_id is None:
+                return False
+            
+            # Verificar si es PAD/AYP de la materia del bloque
+            if self.es_profesor_de_materia(my_prof_id, bloque.asignatura_id):
+                return True
+        return False
 
 
 class Profesor(db.Model):
     __tablename__ = 'profesores'
-
+    
     id = db.Column(db.Integer, primary_key=True)
     nombre_completo = db.Column(db.String(120), nullable=False)
     categoria_habitual = db.Column(db.String(20), nullable=True, default='PAD')
     email = db.Column(db.String(120), nullable=True)
-
+    
     bloques_horarios = db.relationship('BloqueHorario', backref='profesor', lazy=True)
 
 
@@ -105,7 +141,7 @@ class Carrera(db.Model):
     codigo = db.Column(db.String(10), unique=True, nullable=False) # TUASSL, TUDW, EXTERNA
     nombre = db.Column(db.String(150), nullable=False)
     descripcion = db.Column(db.Text, nullable=True)
-
+    
     asignaturas = db.relationship('Asignatura', backref='carrera', lazy=True, cascade='all, delete-orphan')
 
 
@@ -121,48 +157,48 @@ class Asignatura(db.Model):
     carga_horaria_semanal = db.Column(db.Integer, nullable=False, default=8) # Total hs semanales
     profesor_cargo = db.Column(db.String(150), nullable=True) # Texto libre / legacy
     es_externa = db.Column(db.Boolean, nullable=False, default=False) # Bloqueo externo / otra materia
-
+    
     # Un único Profesor PAD (Adjunto / Titular) por Materia
     profesor_pad_id = db.Column(db.Integer, db.ForeignKey('profesores.id'), nullable=True)
     profesor_pad = db.relationship('Profesor', foreign_keys=[profesor_pad_id], backref='asignaturas_pad')
-
+    
     # Múltiples Profesores AYP (Ayudantes de Primera / JTPs) por Materia
     profesores_ayp = db.relationship('Profesor', secondary=asignatura_ayps, backref='asignaturas_ayp')
-
+    
     bloques_horarios = db.relationship('BloqueHorario', backref='asignatura', lazy=True, cascade='all, delete-orphan')
-
+    
     @property
     def nombre_pad(self):
         if self.profesor_pad:
             return f"{self.profesor_pad.nombre_completo} (PAD)"
         return self.profesor_cargo or "Sin PAD asignado"
-
+    
     @property
     def nombres_ayps_lista(self):
         if self.profesores_ayp:
             return [f"{p.nombre_completo} (AYP)" for p in self.profesores_ayp]
         return []
-
+    
     @property
     def min_horas_sincronicas(self):
         if self.es_externa:
             return 0
         return math.floor(self.carga_horaria_semanal / 2) + 1
-
+    
     @property
     def max_horas_asincronicas(self):
         if self.es_externa:
             return 0
         return self.carga_horaria_semanal - self.min_horas_sincronicas
-
+    
     @property
     def total_horas_sincronicas_programadas(self):
         return sum(b.duracion_horas for b in self.bloques_horarios if b.es_sincronico)
-
+    
     @property
     def total_horas_asincronicas_programadas(self):
         return sum(b.duracion_horas for b in self.bloques_horarios if not b.es_sincronico)
-
+    
     @property
     def cumple_regla_sincronica(self):
         if self.es_externa:
@@ -179,7 +215,7 @@ class EspacioFisico(db.Model):
     es_laboratorio = db.Column(db.Boolean, default=False)
     equipamiento = db.Column(db.String(200), default='Computadoras / Proyector / Red')
     activa = db.Column(db.Boolean, default=True)
-
+    
     bloques_horarios = db.relationship('BloqueHorario', backref='espacio_fisico', lazy=True)
 
 
@@ -214,15 +250,64 @@ class BloqueHorario(db.Model):
     es_sincronico = db.Column(db.Boolean, nullable=False, default=True)
     es_bloqueo_externo = db.Column(db.Boolean, nullable=False, default=False)
     observaciones = db.Column(db.String(250), nullable=True)
-
+    
     @property
     def dia_nombre(self):
         return DIAS_SEMANA.get(self.dia_semana, 'Desconocido')
-
+    
     @property
     def rol_docente_label(self):
         return 'PAD (Teoría)' if self.rol_docente == 'PAD' else 'AYP (Práctica)'
-
+    
     @property
     def requiere_aula(self):
         return self.modalidad in ['Presencial', 'Híbrido', 'Bloqueo Aula'] and self.espacio_fisico_id is not None
+
+
+class Auditoria(db.Model):
+    """Log de auditoría: registra todas las modificaciones realizadas en el sistema."""
+    __tablename__ = 'auditoria'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    usuario_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    usuario = db.relationship('User', backref='auditoria_logs')
+    
+    accion = db.Column(db.String(50), nullable=False)  # ej: 'crear_bloque', 'editar_bloque', 'eliminar_bloque', 'crear_materia', 'editar_materia', 'crear_profesor', 'editar_profesor', 'eliminar_profesor', 'crear_usuario', 'editar_usuario', 'congelar_sistema', 'descongelar_sistema'
+    
+    entidad_tipo = db.Column(db.String(30), nullable=True)  # 'bloque', 'materia', 'profesor', 'usuario', ' sistema'
+    entidad_id = db.Column(db.Integer, nullable=True)
+    
+    detalles = db.Column(db.Text, nullable=True)  # JSON con los cambios
+    
+    ip_address = db.Column(db.String(45), nullable=True)
+    
+    created_at = db.Column(db.DateTime, default=utc_now, index=True)
+
+
+class SolicitudCambio(db.Model):
+    """
+    Workflow de aprobación para cambios realizados por PAD/AYP en materias que no les pertenecen.
+    Estado: 'pendiente', 'aprobada', 'rechazada'
+    """
+    __tablename__ = 'solicitudes_cambio'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    bloque_id = db.Column(db.Integer, db.ForeignKey('bloques_horarios.id'), nullable=False)
+    bloque = db.relationship('BloqueHorario', backref='solicitudes_cambio')
+    
+    profesor_id = db.Column(db.Integer, db.ForeignKey('profesores.id'), nullable=False)
+    profesor = db.relationship('Profesor', backref='solicitudes_realizadas')
+    
+    descripcion = db.Column(db.String(500), nullable=True)
+    
+    estado = db.Column(db.String(20), nullable=False, default='pendiente')  # pendiente, aprobada, rechazada
+    
+    solicitado_por_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    solicitado_por = db.relationship('User', foreign_keys=[solicitado_por_id])
+    
+    aprobado_por_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+    aprobado_por = db.relationship('User', foreign_keys=[aprobado_por_id])
+    
+    creada_en = db.Column(db.DateTime, default=utc_now)
+    aprobada_en = db.Column(db.DateTime, nullable=True)
+    observaciones_admin = db.Column(db.String(500), nullable=True)

@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+
+{% block title %}Registro de Auditoría{% endblock %}
+
+{% block content %}
+<div class="row mb-3">
+    <div class="col">
+        <h2 class="text-white"><i class="bi bi-journal-text"></i> Registro de Auditoría</h2>
+        <p class="text-secondary">Registro de todas las modificaciones realizadas en el sistema</p>
+    </div>
+    <div class="col-auto">
+        <span class="badge bg-primary fs-6">Total: {{ total }} registros</span>
+    </div>
+</div>
+
+<!-- Filtros -->
+<div class="card bg-secondary">
+    <div class="card-body">
+        <form method="GET" action="{{ url_for('main.auditoria') }}" class="row g-3 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label text-white">Acción</label>
+                <select name="accion" class="form-select bg-dark text-white border-secondary">
+                    <option value="">Todas las acciones</option>
+                    {% for valor, nombre in acciones_disponibles %}
+                    <option value="{{ valor }}" {% if accion_filter == valor %}selected{% endif %}>{{ nombre }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label text-white">Entidad</label>
+                <select name="entidad" class="form-select bg-dark text-white border-secondary">
+                    <option value="">Todas las entidades</option>
+                    <option value="profesor" {% if entidad_filter == 'profesor' %}selected{% endif %}>Profesor</option>
+                    <option value="materia" {% if entidad_filter == 'materia' %}selected{% endif %}>Materia</option>
+                    <option value="bloque" {% if entidad_filter == 'bloque' %}selected{% endif %}>Bloque</option>
+                    <option value="usuario" {% if entidad_filter == 'usuario' %}selected{% endif %}>Usuario</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label text-white">Usuario</label>
+                <select name="usuario" class="form-select bg-dark text-white border-secondary">
+                    <option value="">Todos los usuarios</option>
+                    {% for u in usuarios %}
+                    <option value="{{ u.id }}" {% if usuario_filter == u.id|string %}selected{% endif %}>{{ u.username }} ({{ u.role }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary me-2"><i class="bi bi-funnel"></i> Filtrar</button>
+                <a href="{{ url_for('main.auditoria') }}" class="btn btn-outline-secondary"><i class="bi bi-x-circle"></i> Limpiar</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Resumen de acciones -->
+{% if acciones_distintas %}
+<div class="row mt-3">
+    <div class="col">
+        <div class="card bg-dark border-secondary">
+            <div class="card-header bg-dark text-white">
+                <h5 class="mb-0"><i class="bi bi-bar-chart"></i> Resumen de acciones</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-flex flex-wrap gap-2">
+                {% for accion, count in acciones_distintas %}
+                    <span class="badge bg-info text-dark">{{ accion }}: {{ count }}</span>
+                {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Tabla de registros -->
+<div class="card bg-dark border-secondary mt-3">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-dark table-striped table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="text-white">Fecha</th>
+                        <th class="text-white">Usuario</th>
+                        <th class="text-white">Acción</th>
+                        <th class="text-white">Entidad</th>
+                        <th class="text-white">ID</th>
+                        <th class="text-white">Detalles</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for log in registros %}
+                    <tr>
+                        <td class="text-white">
+                            <small class="text-secondary">{{ log.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</small>
+                        </td>
+                        <td class="text-white">
+                            <span class="fw-bold">{{ log.usuario.username }}</span>
+                            <span class="badge bg-secondary">{{ log.usuario.role }}</span>
+                        </td>
+                        <td class="text-white">
+                            <span class="badge 
+                                {% if 'crear' in log.accion %}bg-success
+                                {% elif 'editar' in log.accion or 'modificar' in log.accion %}bg-warning
+                                {% elif 'eliminar' in log.accion %}bg-danger
+                                {% elif 'congelar' in log.accion %}bg-secondary
+                                {% elif 'descongelar' in log.accion %}bg-secondary
+                                {% elif 'aprobacion' in log.accion or 'rechazo' in log.accion %}bg-primary
+                                {% else %}bg-dark{% endif %}">
+                                {{ log.accion }}
+                            </span>
+                        </td>
+                        <td class="text-white">
+                            {% if log.entidad_tipo %}
+                                <span class="badge bg-info text-dark">{{ log.entidad_tipo }}</span>
+                            {% else %}
+                                <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-white">
+                            {% if log.entidad_id %}
+                                <code class="text-secondary">#{{ log.entidad_id }}</code>
+                            {% else %}
+                                <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-white" style="max-width: 300px;">
+                            {% if log.detalles %}
+                                <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#detalles-{{ log.id }}">
+                                    <i class="bi bi-eye"></i> Ver
+                                </button>
+                                <div class="collapse mt-1" id="detalles-{{ log.id }}">
+                                    <pre class="bg-dark text-secondary p-2 rounded small">{{ log.detalles }}</pre>
+                                </div>
+                            {% else %}
+                                <span class="text-muted">Sin detalles</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="6" class="text-center text-secondary py-4">
+                            <i class="bi bi-inbox"></i> No hay registros de auditoría
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
