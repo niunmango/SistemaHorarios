@@ -184,6 +184,63 @@ class TestSistemaHorariosRules(unittest.TestCase):
         data = res.get_json()
         self.assertFalse(data['success'])
 
+    def test_deshacer_bloque_exitoso(self):
+        seed_database()
+        client = self.app.test_client()
+        client.post('/login', data={'username': 'admin', 'password': 'admin123'})
+        
+        # Crear un bloque limpio sin conflictos iniciales
+        asig = Asignatura.query.first()
+        bloque = BloqueHorario(
+            asignatura_id=asig.id,
+            dia_semana=4, # Viernes
+            hora_inicio=time(8, 0),
+            hora_fin=time(10, 0),
+            duracion_horas=2.0,
+            modalidad='Virtual',
+            es_sincronico=True
+        )
+        db.session.add(bloque)
+        db.session.commit()
+            
+        dia_original = bloque.dia_semana
+        hora_original = bloque.hora_inicio.strftime('%H:%M')
+
+        # 1. Mover bloque a un nuevo día/horario disponible (Jueves = 3, 10:00)
+        res_mover = client.post(f'/api/bloque/{bloque.id}/mover', json={
+            'dia_semana': 3,
+            'hora_inicio': '10:00'
+        })
+        self.assertEqual(res_mover.status_code, 200)
+        self.assertTrue(res_mover.get_json()['success'])
+
+        db.session.refresh(bloque)
+        self.assertEqual(bloque.dia_semana, 3)
+
+        # 2. Deshacer el cambio vía /api/bloque/<id>/deshacer
+        res_undo = client.post(f'/api/bloque/{bloque.id}/deshacer')
+        self.assertEqual(res_undo.status_code, 200)
+        data_undo = res_undo.get_json()
+        self.assertTrue(data_undo['success'])
+        self.assertIn('restaurada', data_undo['message'])
+
+        db.session.refresh(bloque)
+        self.assertEqual(bloque.dia_semana, dia_original)
+        self.assertEqual(bloque.hora_inicio.strftime('%H:%M'), hora_original)
+
+    def test_deshacer_bloque_sin_cambios_previos(self):
+        seed_database()
+        client = self.app.test_client()
+        client.post('/login', data={'username': 'admin', 'password': 'admin123'})
+        bloque = BloqueHorario.query.first()
+
+        # Intentar deshacer un bloque que no ha sido editado
+        res_undo = client.post(f'/api/bloque/{bloque.id}/deshacer')
+        self.assertEqual(res_undo.status_code, 400)
+        data = res_undo.get_json()
+        self.assertFalse(data['success'])
+        self.assertIn('No hay cambios previos', data['error'])
+
 
 if __name__ == '__main__':
     unittest.main()

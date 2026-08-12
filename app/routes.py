@@ -185,6 +185,11 @@ def api_mover_bloque(id):
             'error': errores[0] if errores else 'Conflicto detectado al reubicar la clase.'
         }), 400
 
+    # Guardar valores anteriores para auditoría y permitir deshacer (undo)
+    dia_semana_anterior = bloque.dia_semana
+    hora_inicio_anterior = bloque.hora_inicio.strftime('%H:%M')
+    hora_fin_anterior = bloque.hora_fin.strftime('%H:%M')
+
     bloque.dia_semana = nuevo_dia
     bloque.hora_inicio = nueva_hora_ini
     bloque.hora_fin = nueva_hora_fin
@@ -200,6 +205,9 @@ def api_mover_bloque(id):
             'nuevo_dia': nuevo_dia,
             'nueva_hora_inicio': str(nueva_hora_ini),
             'nueva_hora_fin': str(nueva_hora_fin),
+            'dia_semana_anterior': dia_semana_anterior,
+            'hora_inicio_anterior': hora_inicio_anterior,
+            'hora_fin_anterior': hora_fin_anterior,
             'metodo': 'api_mover_bloque'
         }
     )
@@ -207,6 +215,120 @@ def api_mover_bloque(id):
     return jsonify({
         'success': True,
         'message': f"¡Clase '{bloque.asignatura.nombre}' movida al {bloque.dia_nombre} de {nueva_hora_ini.strftime('%H:%M')} a {nueva_hora_fin.strftime('%H:%M')}!"
+    })
+
+
+@main_bp.route('/api/bloque/<int:id>/deshacer', methods=['POST'])
+@login_required
+def api_deshacer_bloque(id):
+    if ConfiguracionSistema.esta_congelado():
+        return jsonify({'success': False, 'error': 'El sistema está congelado. No se permiten cambios.'}), 403
+
+    bloque = db.session.get(BloqueHorario, id)
+    if not bloque:
+        return jsonify({'success': False, 'error': 'Bloque de clase no encontrado.'}), 404
+
+    if not current_user.puede_editar_bloque(bloque):
+        return jsonify({'success': False, 'error': 'No tienes permisos para deshacer cambios en esta clase.'}), 403
+
+    # Buscar el registro de auditoría más reciente de modificación para este bloque
+    audit_log = Auditoria.query.filter(
+        Auditoria.entidad_tipo == 'bloque',
+        Auditoria.entidad_id == id,
+        Auditoria.accion.in_(['editar_bloque', 'editar_bloque_api'])
+    ).order_by(Auditoria.created_at.desc()).first()
+
+    if not audit_log or not audit_log.detalles:
+        return jsonify({'success': False, 'error': 'No hay cambios previos registrados para esta clase.'}), 400
+
+    try:
+        detalles = json.loads(audit_log.detalles)
+    except (json.JSONDecodeError, TypeError):
+        return jsonify({'success': False, 'error': 'No se pudo leer los datos previos del cambio.'}), 400
+
+    # Extraer valores previos
+    anterior = detalles.get('anterior', {})
+    dia_ant = detalles.get('dia_semana_anterior') if 'dia_semana_anterior' in detalles else anterior.get('dia_semana')
+    h_ini_ant_str = detalles.get('hora_inicio_anterior') if 'hora_inicio_anterior' in detalles else anterior.get('hora_inicio')
+    h_fin_ant_str = detalles.get('hora_fin_anterior') if 'hora_fin_anterior' in detalles else anterior.get('hora_fin')
+
+    if dia_ant is None or not h_ini_ant_str or not h_fin_ant_str:
+        return jsonify({'success': False, 'error': 'No hay un estado anterior válido para deshacer.'}), 400
+
+    try:
+        h_ini_ant = time.fromisoformat(h_ini_ant_str)
+        h_fin_ant = time.fromisoformat(h_fin_ant_str)
+        dia_ant = int(dia_ant)
+    except (ValueError, TypeError) as e:
+        return jsonify({'success': False, 'error': f'Horario anterior no válido: {str(e)}'}), 400
+
+    # Campos opcionales si fueron modificados en formulario de edición completa
+    espacio_ant_id = anterior.get('espacio_fisico_id', bloque.espacio_fisico_id)
+    profesor_ant_id = anterior.get('profesor_id', bloque.profesor_id)
+    modalidad_ant = anterior.get('modalidad', bloque.modalidad)
+    tipo_ant = anterior.get('tipo', bloque.tipo)
+    rol_ant = anterior.get('rol_docente', bloque.rol_docente)
+    asignatura_ant_id = anterior.get('asignatura_id', bloque.asignatura_id)
+    observaciones_ant = anterior.get('observaciones', bloque.observaciones)
+
+    # Validar que al restaurar no existan conflictos
+    valido, errores, adv = validar_bloque_nuevo(
+        asignatura_id=asignatura_ant_id,
+        dia_semana=dia_ant,
+        hora_inicio=h_ini_ant,
+        hora_fin=h_fin_ant,
+        modalidad=modalidad_ant,
+        espacio_fisico_id=espacio_ant_id,
+        profesor_id=profesor_ant_id,
+        bloque_id_actual=bloque.id
+    )
+
+    if not valido:
+        return jsonify({
+            'success': False,
+            'error': f"No se puede deshacer debido a un conflicto: {errores[0]}"
+        }), 400
+
+    # Guardar estado actual previo al revert
+    dia_actual = bloque.dia_semana
+    h_ini_actual = bloque.hora_inicio.strftime('%H:%M')
+
+    # Restaurar datos del bloque
+    bloque.dia_semana = dia_ant
+    bloque.hora_inicio = h_ini_ant
+    bloque.hora_fin = h_fin_ant
+    bloque.duracion_horas = (h_fin_ant.hour * 60 + h_fin_ant.minute - (h_ini_ant.hour * 60 + h_ini_ant.minute)) / 60.0
+    bloque.asignatura_id = asignatura_ant_id
+    bloque.profesor_id = profesor_ant_id
+    bloque.rol_docente = rol_ant
+    bloque.modalidad = modalidad_ant
+    bloque.tipo = tipo_ant
+    bloque.espacio_fisico_id = espacio_ant_id if modalidad_ant in ['Presencial', 'Híbrido', 'Bloqueo Aula'] else None
+    bloque.es_sincronico = (modalidad_ant != 'Asincrónico (PEDCO)')
+    bloque.es_bloqueo_externo = (modalidad_ant == 'Bloqueo Aula')
+    bloque.observaciones = observaciones_ant
+
+    db.session.commit()
+
+    # Registrar evento de deshacer en auditoría
+    guardar_auditoria(
+        accion='deshacer_bloque',
+        entidad_tipo='bloque',
+        entidad_id=bloque.id,
+        detalles={
+            'bloque_id': bloque.id,
+            'restaurado_a_dia': dia_ant,
+            'restaurado_a_hora_inicio': h_ini_ant_str,
+            'restaurado_a_hora_fin': h_fin_ant_str,
+            'dia_deshecho': dia_actual,
+            'hora_deshecha': h_ini_actual,
+            'audit_log_origen_id': audit_log.id
+        }
+    )
+
+    return jsonify({
+        'success': True,
+        'message': f"¡Cambio deshecho! Clase '{bloque.asignatura.nombre}' restaurada al {bloque.dia_nombre} de {h_ini_ant.strftime('%H:%M')} a {h_fin_ant.strftime('%H:%M')}."
     })
 
 
@@ -680,6 +802,19 @@ def editar_bloque(id):
         for adv in advertencias:
             flash(adv, 'warning')
 
+        anterior = {
+            'dia_semana': bloque.dia_semana,
+            'hora_inicio': bloque.hora_inicio.strftime('%H:%M'),
+            'hora_fin': bloque.hora_fin.strftime('%H:%M'),
+            'asignatura_id': bloque.asignatura_id,
+            'profesor_id': bloque.profesor_id,
+            'rol_docente': bloque.rol_docente,
+            'modalidad': bloque.modalidad,
+            'tipo': bloque.tipo,
+            'espacio_fisico_id': bloque.espacio_fisico_id,
+            'observaciones': bloque.observaciones
+        }
+
         bloque.asignatura_id = asignatura_id
         bloque.profesor_id = profesor_id
         bloque.rol_docente = rol_docente
@@ -714,7 +849,8 @@ def editar_bloque(id):
                 'espacio_fisico_id': espacio_fisico_id,
                 'es_sincronico': bloque.es_sincronico,
                 'es_bloqueo_externo': bloque.es_bloqueo_externo,
-                'observaciones': observaciones
+                'observaciones': observaciones,
+                'anterior': anterior
             }
         )
         

@@ -201,8 +201,9 @@
                                     </div>
 
                                     <!-- BOTÓN DESHACER (oculto por defecto, visible con hover para usuarios con permisos) -->
-                                    <div class="absolute top-0.5 right-0.5 z-50 {% if can_drag %}group-hover:block block{% else %}hidden{% endif %}">
+                                    <div class="absolute top-0.5 right-0.5 z-50 {% if can_drag %}hidden group-hover:block{% else %}hidden{% endif %}">
                                         <button onclick="event.stopPropagation(); undoBloque({{ b.id }})"
+                                                title="Deshacer último cambio"
                                                 class="p-1 bg-slate-900/90 hover:bg-slate-700 rounded text-yellow-400 border border-slate-600 shadow transition-all">
                                             <i class="fa-solid fa-rotate-left text-[9px]"></i>
                                         </button>
@@ -254,13 +255,116 @@
 
 </div>
 
-<!-- JavaScript para funcionalidad de deshacer -->
+<!-- DRAG & DROP SCRIPT AND UNDO FUNCTIONALITY -->
 <script>
+let draggedBlockId = null;
+let draggedBlockName = '';
+
+function onBlockDragStart(e, blockId, blockName, day, startTime) {
+    window.isDragging = true;
+    draggedBlockId = blockId;
+    draggedBlockName = blockName;
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', blockId);
+    
+    const card = document.getElementById('block-card-' + blockId);
+    if (card) {
+        card.classList.add('opacity-40', 'ring-2', 'ring-blue-400');
+    }
+}
+
+function onBlockDragEnd(e) {
+    if (draggedBlockId) {
+        const card = document.getElementById('block-card-' + draggedBlockId);
+        if (card) {
+            card.classList.remove('opacity-40', 'ring-2', 'ring-blue-400');
+        }
+    }
+    draggedBlockId = null;
+    draggedBlockName = '';
+    setTimeout(() => { window.isDragging = false; }, 200);
+}
+
+function onCellDragOver(e) {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    e.currentTarget.classList.add('bg-blue-900/40', 'ring-2', 'ring-inset', 'ring-blue-400');
+}
+
+function onCellDragLeave(e) {
+    e.currentTarget.classList.remove('bg-blue-900/40', 'ring-2', 'ring-inset', 'ring-blue-400');
+}
+
+async function onCellDrop(e, targetDay, targetHour) {
+    e.preventDefault();
+    e.currentTarget.classList.remove('bg-blue-900/40', 'ring-2', 'ring-inset', 'ring-blue-400');
+
+    if (!draggedBlockId) return;
+    const blockId = draggedBlockId;
+
+    showToast(`Reubicando clase '${draggedBlockName}' al ${getDayName(targetDay)} ${targetHour}...`, 'info');
+
+    try {
+        const response = await fetch(`/api/bloque/${blockId}/mover`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                dia_semana: targetDay,
+                hora_inicio: targetHour
+            })
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            showToast(result.message, 'success');
+            setTimeout(() => { window.location.reload(); }, 600);
+        } else {
+            showToast(result.error || 'Conflicto detectado al reubicar la clase.', 'danger');
+        }
+    } catch (err) {
+        showToast('Error de conexión con el servidor.', 'danger');
+    }
+}
+
+function getDayName(dayIndex) {
+    const days = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes'];
+    return days[dayIndex] || 'Día';
+}
+
+function showToast(message, type = 'info') {
+    let toastContainer = document.getElementById('toast-container');
+    if (!toastContainer) {
+        toastContainer = document.createElement('div');
+        toastContainer.id = 'toast-container';
+        toastContainer.className = 'fixed top-5 right-5 z-50 flex flex-col space-y-2 max-w-md pointer-events-none no-print';
+        document.body.appendChild(toastContainer);
+    }
+
+    const toast = document.createElement('div');
+    const colorClasses = type === 'success' 
+        ? 'bg-emerald-900 border-emerald-500 text-emerald-100' 
+        : (type === 'danger' ? 'bg-rose-950 border-rose-500 text-rose-100 shadow-rose-950/80 shadow-2xl' : 'bg-blue-900 border-blue-500 text-blue-100');
+
+    toast.className = `px-4 py-3 border rounded-xl shadow-xl text-xs font-semibold flex items-center space-x-2 transition-all duration-300 transform translate-y-0 opacity-100 pointer-events-auto ${colorClasses}`;
+    toast.innerHTML = `<i class="fa-solid ${type === 'success' ? 'fa-circle-check text-emerald-400' : (type === 'danger' ? 'fa-triangle-exclamation text-rose-400 text-sm' : 'fa-spinner animate-spin text-blue-400')}"></i> <span>${message}</span>`;
+
+    toastContainer.appendChild(toast);
+
+    setTimeout(() => {
+        toast.classList.add('opacity-0', 'translate-y-2');
+        setTimeout(() => toast.remove(), 300);
+    }, 4000);
+}
+
 // Función para deshacer un bloque
 async function undoBloque(bloqueId) {
-    const btn = document.querySelector(`#block-card-${bloqueId} .fa-rotate-left`).closest('button');
+    const card = document.getElementById(`block-card-${bloqueId}`);
+    const btn = card ? card.querySelector('.fa-rotate-left')?.closest('button') : null;
     if (btn) {
-        btn.innerHTML = '<i class="fa-solid fa-spinner text-[9px]"></i>';
+        btn.innerHTML = '<i class="fa-solid fa-spinner animate-spin text-[9px]"></i>';
         btn.disabled = true;
     }
     
@@ -275,7 +379,6 @@ async function undoBloque(bloqueId) {
         
         if (data.success) {
             mostrarMensajeUndo(data.message, 'success');
-            // Recargar la página para reflejar los cambios
             setTimeout(() => location.reload(), 1000);
         } else {
             mostrarMensajeUndo(data.error || 'No se pudo deshacer el cambio.', 'error');
@@ -295,18 +398,23 @@ function mostrarMensajeUndo(mensaje, tipo) {
     const textoEl = document.getElementById(`${container}-texto`);
     const containerEl = document.getElementById(container);
     
-    textoEl.textContent = mensaje;
-    containerEl.classList.remove('hidden');
-    
-    // Auto-ocultar después de 5 segundos
-    setTimeout(() => {
-        containerEl.classList.add('hidden');
-    }, 5000);
+    if (textoEl && containerEl) {
+        textoEl.textContent = mensaje;
+        containerEl.classList.remove('hidden');
+        
+        setTimeout(() => {
+            containerEl.classList.add('hidden');
+        }, 5000);
+    } else {
+        showToast(mensaje, tipo === 'success' ? 'success' : 'danger');
+    }
 }
 
 function cerrarMensajeUndo() {
-    document.getElementById('undo-mensaje').classList.add('hidden');
-    document.getElementById('undo-error').classList.add('hidden');
+    const m = document.getElementById('undo-mensaje');
+    const e = document.getElementById('undo-error');
+    if (m) m.classList.add('hidden');
+    if (e) e.classList.add('hidden');
 }
 </script>
 {% endblock %}

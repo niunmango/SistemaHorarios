@@ -19,6 +19,7 @@ Diseñado específicamente para las carreras:
 
 1. **Grilla Horaria Semanal Interactiva con Drag & Drop (08:00 a 21:00 hs)**:
    - **Reubicación de Clases Estilo Google Calendar**: Arrastrar y soltar clases directamente sobre la grilla para cambiar el día y horario.
+   - **Botón de Deshacer (Undo)**: Botón desplegable al pasar el cursor (*hover*) para revertir rápidamente la última reubicación o cambio de clase.
    - Vista de pantalla completa (1920p) optimizada con bloques de hora de alto simétrico.
    - Tarjeta flotante emergente (**Hover Popover Tooltip**) con explicación detallada de conflictos por cuatrimestre.
    - Coincidencias simultáneas en subcolumnas dinámicas ordenadas por número de aula física de izquierda a derecha (*ej: Sala 1 [JCBrocca] a la izquierda, Sala 2 [JColombo] a la derecha*).
