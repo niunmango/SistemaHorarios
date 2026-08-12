@@ -84,6 +84,9 @@ Para que el botón **`Google / UNComa`** aparezca activo en la pantalla de inici
 3. **Validación Anticonflicto Instantánea**:
    - Si la nueva celda de destino está libre, la clase se moverá inmediatamente y el sistema confirmará con un aviso verde.
    - Si la celda destino genera un **solapamiento de aula** o un **conflicto de horarios del docente**, el cambio será bloqueado y el sistema mostrará una notificación flotante indicando el motivo exacto.
+4. **Botón de Deshacer (Undo)**:
+   - Al posicionar el cursor (*hover*) sobre cualquier bloque de clase que tenga permisos para editar, se visualizará un botón de deshacer (**`↺`**).
+   - Al hacer clic, el sistema invoca la API `/api/bloque/<id>/deshacer` y restaura la clase a su día y horario anterior, revalidando las reglas anticonflicto de forma automática.
 
 ---
 
