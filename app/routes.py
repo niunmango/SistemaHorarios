@@ -658,6 +658,9 @@ def nuevo_bloque():
         flash('El sistema está congelado. No se permiten cambios.', 'warning')
         return redirect(url_for('main.horarios'))
 
+    # Si se proporciona un asignatura_id por URL, precargar esa materia como seleccionada
+    asignatura_id_pre = request.args.get('asignatura_id', type=int)
+
     asignaturas = Asignatura.query.order_by(Asignatura.nombre).all()
     profesores = Profesor.query.order_by(Profesor.nombre_completo).all()
     aulas = EspacioFisico.query.order_by(EspacioFisico.nombre).all()
@@ -748,7 +751,7 @@ def nuevo_bloque():
         flash('Clase / Reserva programada con éxito.', 'success')
         return redirect(url_for('main.horarios'))
 
-    return render_template('bloque_form.html', asignaturas=asignaturas, profesores=profesores, aulas=aulas, bloque=None, dias_semana=DIAS_SEMANA, modalidades=MODALIDADES, tipos_clase=TIPOS_CLASE, DIAS_SEMANA=DIAS_SEMANA, MODALIDADES=MODALIDADES, TIPOS_CLASE=TIPOS_CLASE)
+    return render_template('bloque_form.html', asignaturas=asignaturas, profesores=profesores, aulas=aulas, bloque=None, dias_semana=DIAS_SEMANA, modalidades=MODALIDADES, tipos_clase=TIPOS_CLASE, DIAS_SEMANA=DIAS_SEMANA, MODALIDADES=MODALIDADES, TIPOS_CLASE=TIPOS_CLASE, asignatura_id=asignatura_id_pre)
 
 
 @main_bp.route('/bloques/<int:id>/editar', methods=['GET', 'POST'])

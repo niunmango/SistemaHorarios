@@ -20,7 +20,7 @@
                 <select name="asignatura_id" id="asignatura_id" required class="w-full px-4 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white focus:ring-2 focus:ring-blue-500 focus:outline-none">
                     <option value="">Seleccione Materia...</option>
                     {% for a in asignaturas %}
-                    <option value="{{ a.id }}" {% if (bloque and bloque.asignatura_id == a.id) or (asignatura_id == a.id) %}selected{% endif %}>
+                    <option value="{{ a.id }}" {% if (bloque and bloque.asignatura_id == a.id) or (asignatura_id is not none and asignatura_id == a.id) %}selected{% endif %}>
                         {{ a.carrera.codigo }} ({{ a.anio_cursada }}° Año - {{ a.cuatrimestre }}° Cuatri) - {{ a.nombre }}
                     </option>
                     {% endfor %}
