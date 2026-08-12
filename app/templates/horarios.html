@@ -178,7 +178,6 @@
                                      draggable="true"
                                      ondragstart="onBlockDragStart(event, {{ b.id }}, '{{ b.asignatura.nombre|e }}', {{ b.dia_semana }}, '{{ b.hora_inicio.strftime('%H:%M') }}')"
                                      ondragend="onBlockDragEnd(event)"
-                                     onclick="if (!window.isDragging) window.location.href='{{ url_for('main.editar_bloque', id=b.id) }}';"
                                      {% endif %}
                                      class="w-full h-full rounded px-1 py-0.5 relative border flex flex-col justify-center transition-all group hover:z-50 {% if can_drag %}cursor-grab active:cursor-grabbing hover:ring-2 hover:ring-blue-400{% else %}cursor-pointer{% endif %} {% if es_conflicto %}bg-rose-950/95 border-2 border-rose-500 text-white animate-pulse shadow-lg shadow-rose-950/80{% elif b.modalidad == 'Presencial' %}bg-emerald-950/90 border-emerald-500/60 text-emerald-100 hover:bg-emerald-900{% elif b.modalidad == 'Virtual' %}bg-blue-950/90 border-blue-500/60 text-blue-100 hover:bg-blue-900{% elif b.modalidad == 'Híbrido' %}bg-purple-950/90 border-purple-500/60 text-purple-100 hover:bg-purple-900{% elif b.modalidad == 'Bloqueo Aula' or b.es_bloqueo_externo %}bg-rose-950/90 border-rose-500/60 text-rose-100 hover:bg-rose-900{% else %}bg-amber-950/90 border-amber-500/60 text-amber-100 hover:bg-amber-900{% endif %}">
                                     
@@ -200,13 +199,81 @@
                                         </span>
                                     </div>
 
-                                    <!-- BOTÓN DESHACER (oculto por defecto, visible con hover para usuarios con permisos) -->
-                                    <div class="absolute top-0.5 right-0.5 z-50 {% if can_drag %}hidden group-hover:block{% else %}hidden{% endif %}">
+                                    <!-- BOTÓN DESHACER RÁPIDO (visible al hacer hover) -->
+                                    <div class="absolute top-0.5 right-0.5 z-40 {% if can_drag %}hidden group-hover:block{% else %}hidden{% endif %}">
                                         <button onclick="event.stopPropagation(); undoBloque({{ b.id }})"
-                                                title="Deshacer último cambio"
-                                                class="p-1 bg-slate-900/90 hover:bg-slate-700 rounded text-yellow-400 border border-slate-600 shadow transition-all">
+                                                title="Deshacer último cambio de esta clase"
+                                                class="p-1 bg-slate-900/90 hover:bg-amber-600 rounded text-yellow-400 hover:text-white border border-slate-600 shadow transition-all">
                                             <i class="fa-solid fa-rotate-left text-[9px]"></i>
                                         </button>
+                                    </div>
+
+                                    <!-- SMART HOVER POPOVER TOOLTIP (Vista detallada flotante) -->
+                                    <div class="hidden group-hover:block absolute left-1/2 -translate-x-1/2 {% if hour >= 19 %}bottom-full mb-1.5{% else %}top-full mt-1.5{% endif %} w-72 p-3.5 bg-slate-950 border border-slate-700 rounded-xl shadow-2xl z-50 text-xs space-y-2 pointer-events-auto no-print">
+                                        {% if es_conflicto %}
+                                        <div class="p-2.5 bg-rose-950/95 border border-rose-500 rounded-lg text-rose-100 text-[11px] space-y-1 shadow-lg">
+                                            <div class="font-extrabold flex items-center gap-1.5 text-rose-300">
+                                                <i class="fa-solid fa-triangle-exclamation text-amber-400 text-sm"></i>
+                                                <span>SOLAPAMIENTO DETECTADO</span>
+                                            </div>
+                                            {% if mapa_conflictos and mapa_conflictos.get(b.id) %}
+                                                {% for exp in mapa_conflictos.get(b.id) %}
+                                                    <p class="text-[10px] leading-snug font-medium text-rose-200 border-t border-rose-800/80 pt-1">{{ exp }}</p>
+                                                {% endfor %}
+                                            {% else %}
+                                                <p class="text-[10px] text-rose-200">Conflicto de horario o espacio físico.</p>
+                                            {% endif %}
+                                        </div>
+                                        {% endif %}
+
+                                        <div class="font-bold text-white text-sm leading-tight border-b border-slate-800 pb-1.5 flex items-start justify-between">
+                                            <span>{{ b.asignatura.nombre }}</span>
+                                            <span class="text-[10px] font-mono px-1.5 py-0.5 bg-blue-900/80 text-blue-200 rounded shrink-0">{{ b.asignatura.carrera.codigo }} ({{ b.asignatura.anio_cursada }}° Año)</span>
+                                        </div>
+
+                                        <div class="space-y-1 text-slate-300">
+                                            <p class="flex items-center gap-2">
+                                                <i class="fa-regular fa-clock text-blue-400 w-4"></i>
+                                                <span><strong>Horario:</strong> {{ b.hora_inicio.strftime('%H:%M') }} a {{ b.hora_fin.strftime('%H:%M') }} hs ({{ b.duracion_horas }}h)</span>
+                                            </p>
+                                            <p class="flex items-center gap-2">
+                                                <i class="fa-solid fa-chalkboard-user text-indigo-400 w-4"></i>
+                                                <span><strong>Docente a Cargo:</strong> {% if b.profesor %}<strong class="text-white">{{ b.profesor.nombre_completo }}</strong> <span class="px-1 bg-indigo-900 text-indigo-200 rounded font-mono text-[10px]">{{ b.rol_docente_label }}</span>{% else %}{{ b.asignatura.profesor_cargo or 'Sin asignar' }}{% endif %}</span>
+                                            </p>
+                                            <p class="flex items-center gap-2">
+                                                <i class="fa-solid fa-layer-group text-purple-400 w-4"></i>
+                                                <span><strong>Modalidad / Tipo:</strong> {{ b.modalidad }} ({{ b.tipo }})</span>
+                                            </p>
+                                            {% if b.espacio_fisico %}
+                                            <p class="flex items-center gap-2 text-emerald-300 font-semibold">
+                                                <i class="fa-solid fa-location-dot text-emerald-400 w-4"></i>
+                                                <span><strong>Aula:</strong> {{ b.espacio_fisico.nombre }}</span>
+                                            </p>
+                                            {% endif %}
+                                            {% if b.observaciones %}
+                                            <p class="text-[11px] text-slate-400 italic pt-1 border-t border-slate-800">
+                                                "{{ b.observaciones }}"
+                                            </p>
+                                            {% endif %}
+                                        </div>
+
+                                        {% if current_user.is_authenticated and current_user.puede_editar_bloque(b) %}
+                                        <div class="pt-2 border-t border-slate-800 flex items-center justify-between">
+                                            <a href="{{ url_for('main.editar_bloque', id=b.id) }}" class="px-2.5 py-1 bg-blue-600 hover:bg-blue-500 text-white font-bold text-[11px] rounded-lg shadow flex items-center gap-1 transition-all">
+                                                <i class="fa-solid fa-pen-to-square"></i> Editar / Reubicar
+                                            </a>
+
+                                            <button type="button" onclick="event.stopPropagation(); undoBloque({{ b.id }})" class="px-2 py-1 bg-amber-600/30 hover:bg-amber-600/50 text-amber-300 border border-amber-500/40 rounded-lg font-bold text-[11px] flex items-center gap-1 transition-all">
+                                                <i class="fa-solid fa-rotate-left"></i> Deshacer
+                                            </button>
+
+                                            <form method="POST" action="{{ url_for('main.eliminar_bloque', id=b.id) }}" onsubmit="return confirm('¿Eliminar esta clase?');">
+                                                <button type="submit" class="text-rose-400 hover:text-rose-300 font-bold text-[11px] flex items-center gap-1">
+                                                    <i class="fa-solid fa-trash-can"></i> Eliminar
+                                                </button>
+                                            </form>
+                                        </div>
+                                        {% endif %}
                                     </div>
                                 </div>
                             {% endfor %}
