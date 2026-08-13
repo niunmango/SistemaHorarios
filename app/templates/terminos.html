@@ -1,0 +1,177 @@
+{% extends "base.html" %}
+
+{% block title %}Condiciones del Servicio{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto py-6 space-y-8">
+
+    <!-- Header / Banner -->
+    <div class="bg-gradient-to-r from-slate-800 to-slate-900 border border-slate-700/80 rounded-2xl p-6 sm:p-8 shadow-xl">
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div>
+                <div class="inline-flex items-center gap-2 px-3 py-1 bg-blue-600/20 text-blue-400 border border-blue-500/30 rounded-full text-xs font-semibold uppercase tracking-wider mb-3">
+                    <i class="fa-solid fa-scale-balanced"></i> Marco Legal Institucional
+                </div>
+                <h1 class="text-2xl sm:text-3xl font-bold text-white tracking-tight">Condiciones del Servicio</h1>
+                <p class="text-slate-400 text-sm mt-1">Sistema de Gestión de Horarios y Espacios Físicos — CURZAS / Universidad Nacional del Comahue</p>
+            </div>
+            <div class="text-left sm:text-right text-xs text-slate-400 bg-slate-900/60 border border-slate-700/60 rounded-xl p-3">
+                <span class="block text-slate-500 font-medium">Última actualización</span>
+                <span class="text-slate-200 font-semibold">Agosto de 2026</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Content Sections -->
+    <div class="bg-slate-800/90 border border-slate-700/80 rounded-2xl p-6 sm:p-10 shadow-xl space-y-8 text-slate-300 leading-relaxed text-sm sm:text-base">
+
+        <!-- Sección 1 -->
+        <section class="space-y-3">
+            <h2 class="text-lg sm:text-xl font-bold text-white flex items-center gap-2.5">
+                <span class="flex items-center justify-center w-7 h-7 rounded-lg bg-blue-600/20 text-blue-400 border border-blue-500/30 text-sm font-bold">1</span>
+                Aceptación de las Condiciones
+            </h2>
+            <p>
+                El acceso y utilización del <strong>Sistema de Gestión de Horarios y Espacios Físicos</strong> (en adelante, el "Sistema"), provisto por el <strong>Centro Universitario Regional Zona Atlántica (CURZAS)</strong> de la <strong>Universidad Nacional del Comahue (UNComa)</strong>, implica la aceptación plena, voluntaria y sin reservas de todos y cada uno de los términos establecidos en este documento.
+            </p>
+            <p>
+                Si no está de acuerdo con alguna de las disposiciones aquí descritas, deberá abstenerse de utilizar el Sistema y sus funcionalidades asociadas.
+            </p>
+        </section>
+
+        <hr class="border-slate-700/70">
+
+        <!-- Sección 2 -->
+        <section class="space-y-3">
+            <h2 class="text-lg sm:text-xl font-bold text-white flex items-center gap-2.5">
+                <span class="flex items-center justify-center w-7 h-7 rounded-lg bg-blue-600/20 text-blue-400 border border-blue-500/30 text-sm font-bold">2</span>
+                Naturaleza y Propósito del Servicio
+            </h2>
+            <p>
+                El Sistema es una plataforma institucional diseñada para la optimización, organización, coordinación académica y consulta pública de:
+            </p>
+            <ul class="list-disc list-inside space-y-1.5 pl-2 text-slate-300">
+                <li>Horarios y cronogramas de cursado de carreras del CURZAS (incluyendo TUASSL, TUDW y afines).</li>
+                <li>Asignación, reserva y estado de ocupación de aulas y espacios físicos universitarios.</li>
+                <li>Gestión y solicitudes de cambios de cátedra por parte del cuerpo docente.</li>
+                <li>Auditoría, validación de reglas pedagógicas y prevención de solapamientos horarios.</li>
+            </ul>
+        </section>
+
+        <hr class="border-slate-700/70">
+
+        <!-- Sección 3 -->
+        <section class="space-y-3">
+            <h2 class="text-lg sm:text-xl font-bold text-white flex items-center gap-2.5">
+                <span class="flex items-center justify-center w-7 h-7 rounded-lg bg-blue-600/20 text-blue-400 border border-blue-500/30 text-sm font-bold">3</span>
+                Cuentas de Usuario y Autenticación
+            </h2>
+            <p>
+                El acceso a determinadas funcionalidades del Sistema requiere autenticación de usuario, ya sea mediante credenciales locales o a través de <strong>Google OAuth 2.0</strong> (cuentas <code class="bg-slate-900 px-1.5 py-0.5 rounded text-blue-300 font-mono text-xs">@gmail.com</code> o cuentas institucionales de Google Workspace).
+            </p>
+            <div class="bg-slate-900/80 border border-slate-700/80 rounded-xl p-4 space-y-2">
+                <h3 class="font-semibold text-white text-sm flex items-center gap-2">
+                    <i class="fa-solid fa-shield-halved text-blue-400"></i> Responsabilidad de la Cuenta:
+                </h3>
+                <p class="text-xs sm:text-sm text-slate-400">
+                    El usuario es el único responsable de la confidencialidad de sus credenciales y de cualquier actividad realizada bajo su sesión. Se prohíbe terminantemente ceder, prestar o transferir el acceso a terceros.
+                </p>
+            </div>
+        </section>
+
+        <hr class="border-slate-700/70">
+
+        <!-- Sección 4 -->
+        <section class="space-y-3">
+            <h2 class="text-lg sm:text-xl font-bold text-white flex items-center gap-2.5">
+                <span class="flex items-center justify-center w-7 h-7 rounded-lg bg-blue-600/20 text-blue-400 border border-blue-500/30 text-sm font-bold">4</span>
+                Roles de Usuario y Niveles de Permiso
+            </h2>
+            <p>
+                El Sistema implementa controles de acceso basados en roles académicos y administrativos:
+            </p>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3 pt-1">
+                <div class="bg-slate-900/60 border border-slate-700/60 rounded-xl p-3.5 space-y-1.5">
+                    <div class="text-xs font-bold uppercase tracking-wider text-emerald-400 flex items-center gap-1.5">
+                        <i class="fa-solid fa-graduation-cap"></i> Estudiantes / Consulta
+                    </div>
+                    <p class="text-xs text-slate-400">Visualización de cronogramas, horarios por año/carrera, salones asignados y descarga/impresión de grillas.</p>
+                </div>
+                <div class="bg-slate-900/60 border border-slate-700/60 rounded-xl p-3.5 space-y-1.5">
+                    <div class="text-xs font-bold uppercase tracking-wider text-blue-400 flex items-center gap-1.5">
+                        <i class="fa-solid fa-chalkboard-user"></i> Docentes
+                    </div>
+                    <p class="text-xs text-slate-400">Gestión de bloques asignados a sus cátedras y envío de solicitudes de adecuación horaria.</p>
+                </div>
+                <div class="bg-slate-900/60 border border-slate-700/60 rounded-xl p-3.5 space-y-1.5">
+                    <div class="text-xs font-bold uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
+                        <i class="fa-solid fa-user-gear"></i> Administradores / Bedelía
+                    </div>
+                    <p class="text-xs text-slate-400">Configuración global del sistema, aprobación de solicitudes, asignación física y auditoría completa.</p>
+                </div>
+            </div>
+        </section>
+
+        <hr class="border-slate-700/70">
+
+        <!-- Sección 5 -->
+        <section class="space-y-3">
+            <h2 class="text-lg sm:text-xl font-bold text-white flex items-center gap-2.5">
+                <span class="flex items-center justify-center w-7 h-7 rounded-lg bg-blue-600/20 text-blue-400 border border-blue-500/30 text-sm font-bold">5</span>
+                Uso Aceptable y Prohibiciones
+            </h2>
+            <p>El usuario se compromete a no realizar las siguientes conductas:</p>
+            <ul class="list-disc list-inside space-y-1.5 pl-2 text-slate-300">
+                <li>Utilizar el Sistema para fines ajenos a la actividad académica y administrativa institucional.</li>
+                <li>Intentar vulnerar, eludir o testear mecanismos de autenticación o seguridad de la plataforma.</li>
+                <li>Introducir deliberadamente datos falsos, inconsistentes o que generen perjuicios a las cátedras.</li>
+                <li>Realizar acciones de denegación de servicio o sobrecarga injustificada de los servidores.</li>
+            </ul>
+        </section>
+
+        <hr class="border-slate-700/70">
+
+        <!-- Sección 6 -->
+        <section class="space-y-3">
+            <h2 class="text-lg sm:text-xl font-bold text-white flex items-center gap-2.5">
+                <span class="flex items-center justify-center w-7 h-7 rounded-lg bg-blue-600/20 text-blue-400 border border-blue-500/30 text-sm font-bold">6</span>
+                Disponibilidad y Modificaciones Académicas
+            </h2>
+            <p>
+                El CURZAS se reserva el derecho de realizar ajustes, reprogramaciones o reasignaciones de espacios físicos y horarios en función de las necesidades pedagógicas, edilicias o normativas de la Universidad. Los cronogramas oficiales publicados en este Sistema son dinámicos y reflejan las disposiciones vigentes del Departamento y de la Secretaría Académica.
+            </p>
+        </section>
+
+        <hr class="border-slate-700/70">
+
+        <!-- Sección 7 -->
+        <section class="space-y-3">
+            <h2 class="text-lg sm:text-xl font-bold text-white flex items-center gap-2.5">
+                <span class="flex items-center justify-center w-7 h-7 rounded-lg bg-blue-600/20 text-blue-400 border border-blue-500/30 text-sm font-bold">7</span>
+                Contacto Institucional
+            </h2>
+            <p>
+                Para cualquier consulta, reporte de anomalías o solicitudes administrativas respecto al funcionamiento del Sistema, los usuarios pueden comunicarse a través de los canales institucionales:
+            </p>
+            <div class="bg-slate-900/60 border border-slate-700/60 rounded-xl p-4 text-xs sm:text-sm text-slate-300 space-y-1">
+                <p><strong>Institución:</strong> Centro Universitario Regional Zona Atlántica (CURZAS) — UNComa</p>
+                <p><strong>Área responsable:</strong> Departamento de Ciencia y Tecnología / Secretaría Académica</p>
+                <p><strong>Ubicación:</strong> Viedma, Río Negro, República Argentina</p>
+            </div>
+        </section>
+
+    </div>
+
+    <!-- Bottom Actions -->
+    <div class="flex flex-col sm:flex-row items-center justify-between gap-4 pt-2">
+        <a href="{{ url_for('main.horarios') }}" class="px-5 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white rounded-xl border border-slate-700 text-sm font-medium transition-all flex items-center gap-2">
+            <i class="fa-solid fa-arrow-left"></i> Volver a Horarios
+        </a>
+        <a href="{{ url_for('main.privacidad') }}" class="px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-sm font-semibold shadow-lg shadow-blue-600/20 transition-all flex items-center gap-2">
+            <span>Ver Política de Privacidad</span>
+            <i class="fa-solid fa-arrow-right"></i>
+        </a>
+    </div>
+
+</div>
+{% endblock %}

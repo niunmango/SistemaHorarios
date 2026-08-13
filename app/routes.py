@@ -34,6 +34,20 @@ def index():
     return redirect(url_for('main.horarios'))
 
 
+@main_bp.route('/condiciones-del-servicio')
+@main_bp.route('/terminos')
+def terminos():
+    """Página pública de Condiciones del Servicio (requerida por Google OAuth)."""
+    return render_template('terminos.html')
+
+
+@main_bp.route('/politica-de-privacidad')
+@main_bp.route('/privacidad')
+def privacidad():
+    """Página pública de Política de Privacidad (requerida por Google OAuth)."""
+    return render_template('privacidad.html')
+
+
 @main_bp.route('/dashboard')
 @login_required
 def dashboard():

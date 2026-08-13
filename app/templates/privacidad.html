@@ -1,0 +1,196 @@
+{% extends "base.html" %}
+
+{% block title %}Política de Privacidad{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto py-6 space-y-8">
+
+    <!-- Header / Banner -->
+    <div class="bg-gradient-to-r from-slate-800 to-slate-900 border border-slate-700/80 rounded-2xl p-6 sm:p-8 shadow-xl">
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div>
+                <div class="inline-flex items-center gap-2 px-3 py-1 bg-emerald-600/20 text-emerald-400 border border-emerald-500/30 rounded-full text-xs font-semibold uppercase tracking-wider mb-3">
+                    <i class="fa-solid fa-user-shield"></i> Protección de Datos Personales
+                </div>
+                <h1 class="text-2xl sm:text-3xl font-bold text-white tracking-tight">Política de Privacidad</h1>
+                <p class="text-slate-400 text-sm mt-1">Sistema de Gestión de Horarios y Espacios Físicos — CURZAS / Universidad Nacional del Comahue</p>
+            </div>
+            <div class="text-left sm:text-right text-xs text-slate-400 bg-slate-900/60 border border-slate-700/60 rounded-xl p-3">
+                <span class="block text-slate-500 font-medium">Última actualización</span>
+                <span class="text-slate-200 font-semibold">Agosto de 2026</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Content Sections -->
+    <div class="bg-slate-800/90 border border-slate-700/80 rounded-2xl p-6 sm:p-10 shadow-xl space-y-8 text-slate-300 leading-relaxed text-sm sm:text-base">
+
+        <!-- Sección 1 -->
+        <section class="space-y-3">
+            <h2 class="text-lg sm:text-xl font-bold text-white flex items-center gap-2.5">
+                <span class="flex items-center justify-center w-7 h-7 rounded-lg bg-emerald-600/20 text-emerald-400 border border-emerald-500/30 text-sm font-bold">1</span>
+                Responsable del Tratamiento de Datos
+            </h2>
+            <p>
+                El <strong>Centro Universitario Regional Zona Atlántica (CURZAS)</strong> de la <strong>Universidad Nacional del Comahue (UNComa)</strong>, con domicilio en la ciudad de Viedma, Provincia de Río Negro, República Argentina, es el responsable del tratamiento de los datos personales recabados y procesados a través del <strong>Sistema de Gestión de Horarios y Espacios Físicos</strong> (en adelante, el "Sistema").
+            </p>
+            <p>
+                Esta política describe de manera transparente cómo se recopila, utiliza, protege y resguarda la información de los usuarios que interactúan con la plataforma.
+            </p>
+        </section>
+
+        <hr class="border-slate-700/70">
+
+        <!-- Sección 2 -->
+        <section class="space-y-3">
+            <h2 class="text-lg sm:text-xl font-bold text-white flex items-center gap-2.5">
+                <span class="flex items-center justify-center w-7 h-7 rounded-lg bg-emerald-600/20 text-emerald-400 border border-emerald-500/30 text-sm font-bold">2</span>
+                Datos Recopilados mediante Google OAuth 2.0
+            </h2>
+            <p>
+                Para simplificar y asegurar el acceso a la plataforma sin necesidad de gestionar contraseñas adicionales, el Sistema permite la autenticación mediante el protocolo estándar <strong>OAuth 2.0 de Google</strong>.
+            </p>
+            <p>
+                Al seleccionar <em>"Continuar con Google"</em>, el Sistema solicita exclusivamente los siguientes permisos básicos y no sensibles (scopes: <code class="bg-slate-900 px-1.5 py-0.5 rounded text-blue-300 font-mono text-xs">openid</code>, <code class="bg-slate-900 px-1.5 py-0.5 rounded text-blue-300 font-mono text-xs">email</code>, <code class="bg-slate-900 px-1.5 py-0.5 rounded text-blue-300 font-mono text-xs">profile</code>):
+            </p>
+            
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
+                <div class="bg-slate-900/60 border border-slate-700/60 rounded-xl p-3.5 space-y-1">
+                    <div class="text-xs font-bold uppercase tracking-wider text-blue-400 flex items-center gap-1.5">
+                        <i class="fa-solid fa-envelope"></i> Correo Electrónico
+                    </div>
+                    <p class="text-xs text-slate-400">Dirección de correo electrónico (<code class="text-slate-300">email</code>) utilizada como identificador único de cuenta y canal institucional.</p>
+                </div>
+                <div class="bg-slate-900/60 border border-slate-700/60 rounded-xl p-3.5 space-y-1">
+                    <div class="text-xs font-bold uppercase tracking-wider text-blue-400 flex items-center gap-1.5">
+                        <i class="fa-solid fa-user"></i> Nombre Completo
+                    </div>
+                    <p class="text-xs text-slate-400">Nombre y apellido del perfil público (<code class="text-slate-300">name</code>) para personalizar la interfaz y los registros del sistema.</p>
+                </div>
+                <div class="bg-slate-900/60 border border-slate-700/60 rounded-xl p-3.5 space-y-1">
+                    <div class="text-xs font-bold uppercase tracking-wider text-blue-400 flex items-center gap-1.5">
+                        <i class="fa-solid fa-id-badge"></i> Identificador de Usuario
+                    </div>
+                    <p class="text-xs text-slate-400">ID numérico o alfanumérico provisto por Google (<code class="text-slate-300">sub</code>) para vincular de forma unívoca la sesión.</p>
+                </div>
+            </div>
+
+            <div class="bg-amber-950/40 border border-amber-500/30 rounded-xl p-4 text-xs sm:text-sm text-amber-200/90 flex items-start gap-3">
+                <i class="fa-solid fa-circle-exclamation text-amber-400 text-base mt-0.5 flex-shrink-0"></i>
+                <p>
+                    <strong>Aclaración importante:</strong> El Sistema <u>NO</u> solicita ni accede a contraseñas de su cuenta Google, libreta de contactos, mensajes de Gmail, archivos de Google Drive, ubicación geográfica ni ninguna otra información privada contenida en su cuenta de Google.
+                </p>
+            </div>
+        </section>
+
+        <hr class="border-slate-700/70">
+
+        <!-- Sección 3 -->
+        <section class="space-y-3">
+            <h2 class="text-lg sm:text-xl font-bold text-white flex items-center gap-2.5">
+                <span class="flex items-center justify-center w-7 h-7 rounded-lg bg-emerald-600/20 text-emerald-400 border border-emerald-500/30 text-sm font-bold">3</span>
+                Finalidad del Uso de los Datos
+            </h2>
+            <p>La información recopilada se utiliza exclusivamente para los siguientes fines institucionales:</p>
+            <ul class="list-disc list-inside space-y-1.5 pl-2 text-slate-300">
+                <li>Autenticar y validar la identidad de los usuarios dentro de la plataforma.</li>
+                <li>Asignar automáticamente los permisos correspondientes (asociación de docentes con sus materias y cátedras vigentes).</li>
+                <li>Permitir el seguimiento de solicitudes de adecuación horaria y registro de auditoría de cambios en los cronogramas.</li>
+                <li>Brindar soporte técnico y garantizar la integridad operativa del servicio.</li>
+            </ul>
+        </section>
+
+        <hr class="border-slate-700/70">
+
+        <!-- Sección 4: Requisito de Google -->
+        <section class="space-y-3">
+            <h2 class="text-lg sm:text-xl font-bold text-white flex items-center gap-2.5">
+                <span class="flex items-center justify-center w-7 h-7 rounded-lg bg-emerald-600/20 text-emerald-400 border border-emerald-500/30 text-sm font-bold">4</span>
+                Cumplimiento de la Política de Datos de Usuario de Google (Google API Services User Data Policy)
+            </h2>
+            <div class="bg-blue-950/40 border border-blue-500/30 rounded-xl p-4 sm:p-5 space-y-2">
+                <p class="text-xs sm:text-sm text-blue-200">
+                    El uso y la transferencia a cualquier otra aplicación de la información recibida desde las API de Google por parte del Sistema de Horarios del CURZAS se apegan estrictamente a la <a href="https://developers.google.com/terms/api-services-user-data-policy" target="_blank" rel="noopener noreferrer" class="text-blue-400 underline font-semibold hover:text-blue-300">Política de Datos de Usuario de los Servicios de las API de Google</a>, incluidos los requisitos de <strong>Uso Limitado (Limited Use)</strong>.
+                </p>
+                <p class="text-xs sm:text-sm text-slate-300">
+                    En particular:
+                </p>
+                <ul class="list-disc list-inside space-y-1 text-xs sm:text-sm text-slate-300 pl-2">
+                    <li>Los datos obtenidos a través de Google OAuth <strong>nunca</strong> se transfieren a terceros con fines publicitarios ni de intermediación de datos.</li>
+                    <li>No se utilizan los datos para alimentar modelos de inteligencia artificial de terceros ni para la elaboración de perfiles comerciales.</li>
+                    <li>El acceso a los datos por parte de seres humanos está restringido exclusivamente a situaciones excepcionales de soporte técnico o requerimiento legal fundado.</li>
+                </ul>
+            </div>
+        </section>
+
+        <hr class="border-slate-700/70">
+
+        <!-- Sección 5 -->
+        <section class="space-y-3">
+            <h2 class="text-lg sm:text-xl font-bold text-white flex items-center gap-2.5">
+                <span class="flex items-center justify-center w-7 h-7 rounded-lg bg-emerald-600/20 text-emerald-400 border border-emerald-500/30 text-sm font-bold">5</span>
+                Almacenamiento, Confidencialidad y Seguridad
+            </h2>
+            <p>
+                Los datos se procesan y almacenan en servidores institucionales del CURZAS - Universidad Nacional del Comahue. Implementamos protocolos de comunicación cifrada (<code class="bg-slate-900 px-1.5 py-0.5 rounded text-emerald-300 font-mono text-xs">HTTPS / TLS</code>), control estricto de acceso a bases de datos y registros de auditoría que garantizan la integridad y confidencialidad de la información.
+            </p>
+            <p>
+                <strong>No comercialización:</strong> El CURZAS <u>NO vende, alquila ni cede</u> datos personales a terceros bajo ninguna circunstancia.
+            </p>
+        </section>
+
+        <hr class="border-slate-700/70">
+
+        <!-- Sección 6 -->
+        <section class="space-y-3">
+            <h2 class="text-lg sm:text-xl font-bold text-white flex items-center gap-2.5">
+                <span class="flex items-center justify-center w-7 h-7 rounded-lg bg-emerald-600/20 text-emerald-400 border border-emerald-500/30 text-sm font-bold">6</span>
+                Derechos de los Usuarios y Revocación de Consentimiento
+            </h2>
+            <p>
+                Los usuarios gozan de los derechos de acceso, rectificación, actualización y supresión de sus datos personales conforme a la normativa de protección de datos personales de la República Argentina (Ley N° 25.326).
+            </p>
+            <p>
+                Asimismo, cualquier usuario puede revocar los permisos otorgados a esta aplicación en su cuenta de Google en cualquier momento ingresando a la configuración de seguridad de Google:
+            </p>
+            <div class="pt-1">
+                <a href="https://myaccount.google.com/permissions" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 px-4 py-2 bg-slate-900 hover:bg-slate-950 border border-slate-700 text-blue-400 rounded-xl text-xs sm:text-sm font-semibold transition-all">
+                    <i class="fa-brands fa-google"></i> Administrar permisos de la cuenta Google
+                    <i class="fa-solid fa-arrow-up-right-from-square text-xs ml-1 text-slate-500"></i>
+                </a>
+            </div>
+        </section>
+
+        <hr class="border-slate-700/70">
+
+        <!-- Sección 7 -->
+        <section class="space-y-3">
+            <h2 class="text-lg sm:text-xl font-bold text-white flex items-center gap-2.5">
+                <span class="flex items-center justify-center w-7 h-7 rounded-lg bg-emerald-600/20 text-emerald-400 border border-emerald-500/30 text-sm font-bold">7</span>
+                Contacto y Consultas
+            </h2>
+            <p>
+                Para ejercer sus derechos de protección de datos o formular consultas sobre el alcance de esta política de privacidad, puede contactarse con:
+            </p>
+            <div class="bg-slate-900/60 border border-slate-700/60 rounded-xl p-4 text-xs sm:text-sm text-slate-300 space-y-1">
+                <p><strong>Institución:</strong> Centro Universitario Regional Zona Atlántica (CURZAS) — UNComa</p>
+                <p><strong>Área:</strong> Departamento de Ciencia y Tecnología / Administración de Sistemas</p>
+                <p><strong>Ubicación:</strong> Viedma, Río Negro, República Argentina</p>
+            </div>
+        </section>
+
+    </div>
+
+    <!-- Bottom Actions -->
+    <div class="flex flex-col sm:flex-row items-center justify-between gap-4 pt-2">
+        <a href="{{ url_for('main.horarios') }}" class="px-5 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white rounded-xl border border-slate-700 text-sm font-medium transition-all flex items-center gap-2">
+            <i class="fa-solid fa-arrow-left"></i> Volver a Horarios
+        </a>
+        <a href="{{ url_for('main.terminos') }}" class="px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-sm font-semibold shadow-lg shadow-blue-600/20 transition-all flex items-center gap-2">
+            <span>Ver Condiciones del Servicio</span>
+            <i class="fa-solid fa-arrow-right"></i>
+        </a>
+    </div>
+
+</div>
+{% endblock %}

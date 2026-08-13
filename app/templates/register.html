@@ -64,10 +64,13 @@
             </button>
         </form>
 
-        <div class="mt-6 pt-4 border-t border-slate-700/60 text-center">
-            <a href="{{ url_for('auth.login') }}" class="text-xs text-slate-400 hover:text-white">
+        <div class="mt-6 pt-4 border-t border-slate-700/60 text-center space-y-2">
+            <a href="{{ url_for('auth.login') }}" class="text-xs text-slate-400 hover:text-white inline-block">
                 <i class="fa-solid fa-arrow-left mr-1"></i> Volver a Iniciar Sesión
             </a>
+            <p class="text-[11px] text-slate-500">
+                Al registrarte, aceptas las <a href="{{ url_for('main.terminos') }}" class="text-slate-400 hover:underline">Condiciones del Servicio</a> y la <a href="{{ url_for('main.privacidad') }}" class="text-slate-400 hover:underline">Política de Privacidad</a>.
+            </p>
         </div>
 
     </div>
