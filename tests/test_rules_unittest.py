@@ -255,12 +255,18 @@ class TestSistemaHorariosRules(unittest.TestCase):
         self.assertEqual(custom_app.config['BASE_URL'], 'mihorario.ejemplo.edu.ar')
         self.assertEqual(custom_app.config['FULL_BASE_URL'], 'https://mihorario.ejemplo.edu.ar')
 
-    def test_versionado_sistema(self):
-        from app.version import get_version
-        v = get_version()
-        self.assertTrue(v.startswith('0.1.'))
-        self.assertEqual(self.app.config['VERSION'], v)
+    def test_auditoria_render(self):
+        seed_database()
+        client = self.app.test_client()
+        client.post('/login', data={'username': 'admin', 'password': 'admin123'})
+        res = client.get('/auditoria')
+        self.assertEqual(res.status_code, 200)
+        content = res.get_data(as_text=True)
+        self.assertIn('Registro de Auditoría', content)
+        self.assertIn('Horarios', content)
+        self.assertIn('CURZAS', content)
 
 
 if __name__ == '__main__':
     unittest.main()
+

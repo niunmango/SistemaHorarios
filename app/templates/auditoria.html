@@ -3,144 +3,256 @@
 {% block title %}Registro de Auditoría{% endblock %}
 
 {% block content %}
-<div class="row mb-3">
-    <div class="col">
-        <h2 class="text-white"><i class="bi bi-journal-text"></i> Registro de Auditoría</h2>
-        <p class="text-secondary">Registro de todas las modificaciones realizadas en el sistema</p>
-    </div>
-    <div class="col-auto">
-        <span class="badge bg-primary fs-6">Total: {{ total }} registros</span>
-    </div>
-</div>
+<div class="space-y-6">
+    <!-- Header Section & Stats -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+            <h1 class="text-2xl font-extrabold text-white flex items-center gap-2.5">
+                <i class="fa-solid fa-shield-halved text-blue-400"></i> Registro de Auditoría
+            </h1>
+            <p class="text-xs text-slate-400 mt-1">
+                Trazabilidad y registro de todas las modificaciones realizadas en el sistema por usuarios y gestores.
+            </p>
+        </div>
 
-<!-- Filtros -->
-<div class="card bg-secondary">
-    <div class="card-body">
-        <form method="GET" action="{{ url_for('main.auditoria') }}" class="row g-3 align-items-end">
-            <div class="col-md-3">
-                <label class="form-label text-white">Acción</label>
-                <select name="accion" class="form-select bg-dark text-white border-secondary">
-                    <option value="">Todas las acciones</option>
-                    {% for valor, nombre in acciones_disponibles %}
-                    <option value="{{ valor }}" {% if accion_filter == valor %}selected{% endif %}>{{ nombre }}</option>
-                    {% endfor %}
-                </select>
+        <!-- Metric Badges -->
+        <div class="flex items-center gap-3">
+            <div class="bg-slate-800/80 border border-slate-700/80 rounded-xl px-4 py-2.5 flex items-center gap-3 shadow-lg">
+                <div class="w-8 h-8 rounded-lg bg-blue-500/10 border border-blue-500/30 flex items-center justify-center text-blue-400">
+                    <i class="fa-solid fa-list-check text-sm"></i>
+                </div>
+                <div>
+                    <span class="text-[10px] uppercase tracking-wider font-semibold text-slate-400 block leading-none">Mostrados</span>
+                    <span class="text-lg font-bold text-white leading-tight font-mono">{{ registros|length }}</span>
+                </div>
             </div>
-            <div class="col-md-3">
-                <label class="form-label text-white">Entidad</label>
-                <select name="entidad" class="form-select bg-dark text-white border-secondary">
-                    <option value="">Todas las entidades</option>
-                    <option value="profesor" {% if entidad_filter == 'profesor' %}selected{% endif %}>Profesor</option>
-                    <option value="materia" {% if entidad_filter == 'materia' %}selected{% endif %}>Materia</option>
-                    <option value="bloque" {% if entidad_filter == 'bloque' %}selected{% endif %}>Bloque</option>
-                    <option value="usuario" {% if entidad_filter == 'usuario' %}selected{% endif %}>Usuario</option>
-                </select>
-            </div>
-            <div class="col-md-3">
-                <label class="form-label text-white">Usuario</label>
-                <select name="usuario" class="form-select bg-dark text-white border-secondary">
-                    <option value="">Todos los usuarios</option>
-                    {% for u in usuarios %}
-                    <option value="{{ u.id }}" {% if usuario_filter == u.id|string %}selected{% endif %}>{{ u.username }} ({{ u.role }})</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="col-md-3 d-flex align-items-end">
-                <button type="submit" class="btn btn-primary me-2"><i class="bi bi-funnel"></i> Filtrar</button>
-                <a href="{{ url_for('main.auditoria') }}" class="btn btn-outline-secondary"><i class="bi bi-x-circle"></i> Limpiar</a>
-            </div>
-        </form>
-    </div>
-</div>
-
-<!-- Resumen de acciones -->
-{% if acciones_distintas %}
-<div class="row mt-3">
-    <div class="col">
-        <div class="card bg-dark border-secondary">
-            <div class="card-header bg-dark text-white">
-                <h5 class="mb-0"><i class="bi bi-bar-chart"></i> Resumen de acciones</h5>
-            </div>
-            <div class="card-body">
-                <div class="d-flex flex-wrap gap-2">
-                {% for accion, count in acciones_distintas %}
-                    <span class="badge bg-info text-dark">{{ accion }}: {{ count }}</span>
-                {% endfor %}
+            <div class="bg-slate-800/80 border border-slate-700/80 rounded-xl px-4 py-2.5 flex items-center gap-3 shadow-lg">
+                <div class="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
+                    <i class="fa-solid fa-database text-sm"></i>
+                </div>
+                <div>
+                    <span class="text-[10px] uppercase tracking-wider font-semibold text-slate-400 block leading-none">Total Logs</span>
+                    <span class="text-lg font-bold text-white leading-tight font-mono">{{ total }}</span>
                 </div>
             </div>
         </div>
     </div>
-</div>
-{% endif %}
 
-<!-- Tabla de registros -->
-<div class="card bg-dark border-secondary mt-3">
-    <div class="card-body p-0">
-        <div class="table-responsive">
-            <table class="table table-dark table-striped table-hover mb-0">
-                <thead class="table-light">
-                    <tr>
-                        <th class="text-white">Fecha</th>
-                        <th class="text-white">Usuario</th>
-                        <th class="text-white">Acción</th>
-                        <th class="text-white">Entidad</th>
-                        <th class="text-white">ID</th>
-                        <th class="text-white">Detalles</th>
+    <!-- Filtros Card -->
+    <div class="bg-slate-800/80 border border-slate-700/80 rounded-2xl p-5 shadow-xl">
+        <form method="GET" action="{{ url_for('main.auditoria') }}" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 items-end">
+            <!-- Filter: Acción -->
+            <div>
+                <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
+                    <i class="fa-solid fa-bolt text-blue-400 mr-1"></i> Acción
+                </label>
+                <div class="relative">
+                    <select name="accion" class="w-full bg-slate-900 border border-slate-700 text-slate-200 text-xs rounded-xl px-3 py-2.5 focus:border-blue-500 focus:outline-none appearance-none pr-8 cursor-pointer">
+                        <option value="">Todas las acciones</option>
+                        {% for valor, nombre in acciones_disponibles %}
+                        <option value="{{ valor }}" {% if accion_filter == valor %}selected{% endif %}>{{ nombre }}</option>
+                        {% endfor %}
+                    </select>
+                    <i class="fa-solid fa-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 text-xs pointer-events-none"></i>
+                </div>
+            </div>
+
+            <!-- Filter: Entidad -->
+            <div>
+                <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
+                    <i class="fa-solid fa-cube text-blue-400 mr-1"></i> Entidad
+                </label>
+                <div class="relative">
+                    <select name="entidad" class="w-full bg-slate-900 border border-slate-700 text-slate-200 text-xs rounded-xl px-3 py-2.5 focus:border-blue-500 focus:outline-none appearance-none pr-8 cursor-pointer">
+                        <option value="">Todas las entidades</option>
+                        <option value="profesor" {% if entidad_filter == 'profesor' %}selected{% endif %}>Profesor</option>
+                        <option value="materia" {% if entidad_filter == 'materia' %}selected{% endif %}>Materia</option>
+                        <option value="bloque" {% if entidad_filter == 'bloque' %}selected{% endif %}>Bloque Horario</option>
+                        <option value="usuario" {% if entidad_filter == 'usuario' %}selected{% endif %}>Usuario</option>
+                        <option value="sistema" {% if entidad_filter == 'sistema' %}selected{% endif %}>Sistema</option>
+                    </select>
+                    <i class="fa-solid fa-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 text-xs pointer-events-none"></i>
+                </div>
+            </div>
+
+            <!-- Filter: Usuario -->
+            <div>
+                <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
+                    <i class="fa-solid fa-user text-blue-400 mr-1"></i> Usuario
+                </label>
+                <div class="relative">
+                    <select name="usuario" class="w-full bg-slate-900 border border-slate-700 text-slate-200 text-xs rounded-xl px-3 py-2.5 focus:border-blue-500 focus:outline-none appearance-none pr-8 cursor-pointer">
+                        <option value="">Todos los usuarios</option>
+                        {% for u in usuarios %}
+                        <option value="{{ u.id }}" {% if usuario_filter == u.id|string %}selected{% endif %}>{{ u.username }} ({{ u.role }})</option>
+                        {% endfor %}
+                    </select>
+                    <i class="fa-solid fa-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 text-xs pointer-events-none"></i>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="flex items-center gap-2">
+                <button type="submit" class="flex-1 bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs py-2.5 px-4 rounded-xl shadow-lg shadow-blue-500/20 transition-all flex items-center justify-center gap-2 cursor-pointer">
+                    <i class="fa-solid fa-filter"></i> Filtrar
+                </button>
+                {% if accion_filter or entidad_filter or usuario_filter %}
+                <a href="{{ url_for('main.auditoria') }}" class="bg-slate-700 hover:bg-slate-600 text-slate-300 font-semibold text-xs py-2.5 px-3 rounded-xl border border-slate-600 transition-all flex items-center justify-center gap-1.5" title="Limpiar filtros">
+                    <i class="fa-solid fa-rotate-left"></i> Limpiar
+                </a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+
+    <!-- Resumen de acciones -->
+    {% if acciones_distintas %}
+    <div class="bg-slate-800/80 border border-slate-700/80 rounded-2xl p-4 shadow-xl">
+        <h3 class="text-xs font-bold text-slate-300 uppercase tracking-wider mb-3 flex items-center gap-2">
+            <i class="fa-solid fa-chart-pie text-blue-400"></i> Resumen de Acciones Registradas
+        </h3>
+        <div class="flex flex-wrap gap-2">
+            {% for accion, count in acciones_distintas %}
+            <a href="{{ url_for('main.auditoria', accion=accion) }}" 
+               class="px-2.5 py-1 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all border
+                      {% if 'crear' in accion %}bg-emerald-950/60 text-emerald-300 border-emerald-500/40 hover:bg-emerald-900/60
+                      {% elif 'editar' in accion or 'modificar' in accion %}bg-amber-950/60 text-amber-300 border-amber-500/40 hover:bg-amber-900/60
+                      {% elif 'eliminar' in accion %}bg-rose-950/60 text-rose-300 border-rose-500/40 hover:bg-rose-900/60
+                      {% elif 'congelar' in accion or 'descongelar' in accion %}bg-cyan-950/60 text-cyan-300 border-cyan-500/40 hover:bg-cyan-900/60
+                      {% else %}bg-slate-900 text-slate-300 border-slate-700 hover:bg-slate-800{% endif %}">
+                <span>{{ accion }}</span>
+                <span class="px-1.5 py-0.2 bg-slate-900/80 rounded text-[10px] font-mono text-slate-300 border border-slate-700">{{ count }}</span>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Tabla de Registros -->
+    <div class="bg-slate-800/80 border border-slate-700/80 rounded-2xl overflow-hidden shadow-xl">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs border-collapse">
+                <thead>
+                    <tr class="border-b border-slate-700 bg-slate-900/60 text-slate-400 uppercase font-mono text-[10px] tracking-wider">
+                        <th class="py-3.5 px-4">Fecha y Hora</th>
+                        <th class="py-3.5 px-4">Usuario</th>
+                        <th class="py-3.5 px-4">Acción</th>
+                        <th class="py-3.5 px-4">Entidad</th>
+                        <th class="py-3.5 px-4">ID Entidad</th>
+                        <th class="py-3.5 px-4">Dirección IP</th>
+                        <th class="py-3.5 px-4 text-right">Detalles</th>
                     </tr>
                 </thead>
-                <tbody>
+                <tbody class="divide-y divide-slate-700/60">
                     {% for log in registros %}
-                    <tr>
-                        <td class="text-white">
-                            <small class="text-secondary">{{ log.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</small>
+                    <tr class="hover:bg-slate-700/40 transition-colors">
+                        <!-- Fecha -->
+                        <td class="py-3.5 px-4 whitespace-nowrap">
+                            <div class="font-mono text-slate-200 font-medium flex items-center gap-1.5">
+                                <i class="fa-regular fa-clock text-slate-500 text-[11px]"></i>
+                                {{ log.created_at.strftime('%Y-%m-%d %H:%M:%S') }}
+                            </div>
                         </td>
-                        <td class="text-white">
-                            <span class="fw-bold">{{ log.usuario.username }}</span>
-                            <span class="badge bg-secondary">{{ log.usuario.role }}</span>
+
+                        <!-- Usuario -->
+                        <td class="py-3.5 px-4 whitespace-nowrap">
+                            {% if log.usuario %}
+                            <div class="flex items-center gap-2">
+                                <div class="w-7 h-7 rounded-full bg-slate-700 border border-slate-600 flex items-center justify-center text-[10px] font-bold text-blue-300 uppercase">
+                                    {{ log.usuario.username[:2] }}
+                                </div>
+                                <div>
+                                    <span class="font-semibold text-white block leading-tight">{{ log.usuario.username }}</span>
+                                    <span class="text-[10px] text-slate-400 uppercase font-mono">{{ log.usuario.role }}</span>
+                                </div>
+                            </div>
+                            {% else %}
+                            <span class="text-slate-500 italic flex items-center gap-1">
+                                <i class="fa-solid fa-robot text-slate-600"></i> Sistema / Anónimo
+                            </span>
+                            {% endif %}
                         </td>
-                        <td class="text-white">
-                            <span class="badge 
-                                {% if 'crear' in log.accion %}bg-success
-                                {% elif 'editar' in log.accion or 'modificar' in log.accion %}bg-warning
-                                {% elif 'eliminar' in log.accion %}bg-danger
-                                {% elif 'congelar' in log.accion %}bg-secondary
-                                {% elif 'descongelar' in log.accion %}bg-secondary
-                                {% elif 'aprobacion' in log.accion or 'rechazo' in log.accion %}bg-primary
-                                {% else %}bg-dark{% endif %}">
+
+                        <!-- Acción -->
+                        <td class="py-3.5 px-4 whitespace-nowrap">
+                            <span class="px-2.5 py-1 rounded-lg text-xs font-semibold inline-flex items-center gap-1.5 border
+                                {% if 'crear' in log.accion %}bg-emerald-950/80 text-emerald-300 border-emerald-500/40
+                                {% elif 'editar' in log.accion or 'modificar' in log.accion %}bg-amber-950/80 text-amber-300 border-amber-500/40
+                                {% elif 'eliminar' in log.accion %}bg-rose-950/80 text-rose-300 border-rose-500/40
+                                {% elif 'congelar' in log.accion or 'descongelar' in log.accion %}bg-cyan-950/80 text-cyan-300 border-cyan-500/40
+                                {% elif 'aprobacion' in log.accion or 'rechazo' in log.accion %}bg-purple-950/80 text-purple-300 border-purple-500/40
+                                {% else %}bg-slate-700 text-slate-200 border-slate-600{% endif %}">
+                                <i class="fa-solid {% if 'crear' in log.accion %}fa-plus-circle{% elif 'editar' in log.accion %}fa-pen-to-square{% elif 'eliminar' in log.accion %}fa-trash-can{% elif 'congelar' in log.accion %}fa-snowflake{% else %}fa-bolt{% endif %} text-[10px]"></i>
                                 {{ log.accion }}
                             </span>
                         </td>
-                        <td class="text-white">
+
+                        <!-- Entidad -->
+                        <td class="py-3.5 px-4 whitespace-nowrap">
                             {% if log.entidad_tipo %}
-                                <span class="badge bg-info text-dark">{{ log.entidad_tipo }}</span>
+                            <span class="px-2 py-0.5 rounded text-[11px] font-medium bg-blue-950/60 text-blue-300 border border-blue-800/50 uppercase font-mono">
+                                {{ log.entidad_tipo }}
+                            </span>
                             {% else %}
-                                <span class="text-muted">-</span>
+                            <span class="text-slate-500 italic">-</span>
                             {% endif %}
                         </td>
-                        <td class="text-white">
+
+                        <!-- ID -->
+                        <td class="py-3.5 px-4 whitespace-nowrap">
                             {% if log.entidad_id %}
-                                <code class="text-secondary">#{{ log.entidad_id }}</code>
+                            <span class="font-mono text-slate-300 bg-slate-900 px-2 py-0.5 rounded border border-slate-700 text-[11px]">
+                                #{{ log.entidad_id }}
+                            </span>
                             {% else %}
-                                <span class="text-muted">-</span>
+                            <span class="text-slate-500 italic">-</span>
                             {% endif %}
                         </td>
-                        <td class="text-white" style="max-width: 300px;">
+
+                        <!-- IP -->
+                        <td class="py-3.5 px-4 whitespace-nowrap font-mono text-slate-400 text-[11px]">
+                            {{ log.ip_address or '-' }}
+                        </td>
+
+                        <!-- Detalles -->
+                        <td class="py-3.5 px-4 text-right">
                             {% if log.detalles %}
-                                <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#detalles-{{ log.id }}">
-                                    <i class="bi bi-eye"></i> Ver
-                                </button>
-                                <div class="collapse mt-1" id="detalles-{{ log.id }}">
-                                    <pre class="bg-dark text-secondary p-2 rounded small">{{ log.detalles }}</pre>
-                                </div>
+                            <button onclick="toggleLogDetails({{ log.id }})" 
+                                    class="px-2.5 py-1 bg-slate-700 hover:bg-slate-600 text-slate-200 font-semibold text-[11px] rounded-lg border border-slate-600 transition-all inline-flex items-center gap-1.5 cursor-pointer">
+                                <i class="fa-solid fa-code text-blue-400"></i> Detalle
+                                <i id="icon-detalles-{{ log.id }}" class="fa-solid fa-chevron-down text-[9px] transition-transform duration-200"></i>
+                            </button>
                             {% else %}
-                                <span class="text-muted">Sin detalles</span>
+                            <span class="text-slate-500 italic text-[11px]">Sin detalles</span>
                             {% endif %}
                         </td>
                     </tr>
+
+                    <!-- Details Row -->
+                    {% if log.detalles %}
+                    <tr id="row-detalles-{{ log.id }}" class="hidden bg-slate-900/90 border-t-0">
+                        <td colspan="7" class="p-4">
+                            <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 shadow-inner font-mono text-[11px] text-slate-300">
+                                <div class="flex items-center justify-between pb-2 mb-2 border-b border-slate-800 text-slate-400">
+                                    <span class="font-bold flex items-center gap-1.5 text-blue-400">
+                                        <i class="fa-solid fa-circle-info"></i> Metadatos de la Operación (Log #{{ log.id }})
+                                    </span>
+                                    <span class="text-[10px] text-slate-500">{{ log.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</span>
+                                </div>
+                                <pre class="whitespace-pre-wrap leading-relaxed text-emerald-400 break-all">{{ log.detalles }}</pre>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endif %}
+
                     {% else %}
                     <tr>
-                        <td colspan="6" class="text-center text-secondary py-4">
-                            <i class="bi bi-inbox"></i> No hay registros de auditoría
+                        <td colspan="7" class="py-12 text-center text-slate-400">
+                            <div class="flex flex-col items-center justify-center gap-2">
+                                <i class="fa-solid fa-inbox text-slate-600 text-4xl mb-1"></i>
+                                <span class="font-semibold text-slate-300">No se encontraron registros de auditoría</span>
+                                <span class="text-xs text-slate-500">Prueba ajustando los filtros de búsqueda.</span>
+                            </div>
                         </td>
                     </tr>
                     {% endfor %}
@@ -149,4 +261,22 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function toggleLogDetails(id) {
+    const row = document.getElementById(`row-detalles-${id}`);
+    const icon = document.getElementById(`icon-detalles-${id}`);
+    if (row) {
+        if (row.classList.contains('hidden')) {
+            row.classList.remove('hidden');
+            if (icon) icon.classList.add('rotate-180');
+        } else {
+            row.classList.add('hidden');
+            if (icon) icon.classList.remove('rotate-180');
+        }
+    }
+}
+</script>
 {% endblock %}

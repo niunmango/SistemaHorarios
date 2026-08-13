@@ -41,6 +41,7 @@ def create_app(test_config=None):
         SECRET_KEY=os.environ.get('SECRET_KEY', 'dev-secret-key-curzas-horarios-2026'),
         SQLALCHEMY_DATABASE_URI=os.environ.get('DATABASE_URL', f"sqlite:///{os.path.join(app.instance_path, 'sistema_horarios.db')}"),
         SQLALCHEMY_TRACK_MODIFICATIONS=False,
+        TEMPLATES_AUTO_RELOAD=True,
         BASE_URL=base_url_domain,
         FULL_BASE_URL=full_base_url,
         VERSION=get_version(),
