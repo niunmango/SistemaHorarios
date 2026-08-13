@@ -88,7 +88,7 @@ def create_app(test_config=None):
     def inject_system_config():
         base_url_val = app.config.get('BASE_URL', 'horarios.curza.com.ar')
         full_base_url_val = app.config.get('FULL_BASE_URL', 'https://horarios.curza.com.ar')
-        version_val = app.config.get('VERSION', get_version())
+        version_val = get_version()
         try:
             from app.models import ConfiguracionSistema
             config = ConfiguracionSistema.get_config()
