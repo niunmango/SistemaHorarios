@@ -267,6 +267,16 @@ class TestSistemaHorariosRules(unittest.TestCase):
         self.assertIn('CURZAS', content)
 
 
+    def test_versionado_automatico_git(self):
+        from app.version import get_version, get_git_version
+        v = get_version()
+        self.assertTrue(v.startswith('0.1.'))
+        git_v = get_git_version()
+        if git_v:
+            self.assertEqual(v, git_v)
+
+
 if __name__ == '__main__':
     unittest.main()
+
 
