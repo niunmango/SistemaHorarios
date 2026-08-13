@@ -40,6 +40,14 @@ Para que el botón **`Google / UNComa`** aparezca activo en la pantalla de inici
      - **Para desarrollo local**: `http://localhost:5000/auth/callback`
      - **Para Servidor / Producción**: `https://horarios.curza.com.ar/auth/callback` (o según la variable `BASE_URL`)
 
+> [!IMPORTANT]
+> **Resolución de Error `redirect_uri_mismatch` y Coincidencia Exacta de URIs**:
+> - **Problema principal**: Google exige una **coincidencia exacta** entre la URI de redireccionamiento enviada por la aplicación y la configurada en la consola. Registrar únicamente la URI base (`https://horarios.curza.com.ar`) provocará el error `redirect_uri_mismatch`.
+> - **URI requerida por la aplicación**: `https://horarios.curza.com.ar/auth/callback` (debe incluir la ruta `/auth/callback`).
+> - **Acción obligatoria**: Ramiro (o el administrador) debe agregar expresamente la segunda URI (`https://horarios.curza.com.ar/auth/callback`) en Google Cloud Console dentro de **“URIs de redireccionamiento autorizados”**.
+> - **Aclaración clave**: **No sirve editar esa dirección solamente dentro del archivo JSON de credenciales**. El cambio debe realizarse indefectiblemente en los servidores de Google a través de Google Cloud Console.
+> - Para más información, consulte la [Documentación Oficial de Google OAuth 2.0 para Aplicaciones Web](https://developers.google.com/identity/protocols/oauth2/web-server).
+
 2. **Configurar Variables de Entorno en el Servidor (Podman / Docker / Linux)**:
    Agregue las variables de entorno (`BASE_URL`, `OAUTH_CLIENT_ID` y `OAUTH_CLIENT_SECRET`), ya sea exportándolas en el entorno previo al `podman compose up` o configurándolas en su archivo de variables de entorno:
    - `BASE_URL`: `horarios.curza.com.ar` (Dominio/URL base del sitio, por defecto `horarios.curza.com.ar`)

@@ -46,9 +46,16 @@ Por defecto, la interfaz del sistema permite ingresar con usuario y contraseña 
 
 1. Vaya a la [Consola de Google Cloud Credentials](https://console.cloud.google.com/apis/credentials).
 2. Cree una credencial de **ID de cliente de OAuth 2.0** de tipo *Aplicación web*.
-3. En **URIs de redireccionamiento autorizados**, agregue la dirección de su servidor:
+3. En **URIs de redireccionamiento autorizados**, agregue la dirección exacta con la ruta del callback:
    - **Desarrollo local**: `http://localhost:5000/auth/callback`
-   - **Servidor / Producción**: `https://tu-dominio-curza.edu.ar/auth/callback`
+   - **Servidor / Producción**: `https://horarios.curza.com.ar/auth/callback` (o según su dominio/`BASE_URL`)
+
+> [!WARNING]
+> **Coincidencia exacta de URI y Error `redirect_uri_mismatch`**:
+> - **Problema**: Si en Google Cloud Console solo está registrada la URI base (`https://horarios.curza.com.ar`) sin el endpoint `/auth/callback`, el inicio de sesión fallará arrojando `redirect_uri_mismatch`.
+> - **Solución**: Se debe agregar explícitamente `https://horarios.curza.com.ar/auth/callback` en **"URIs de redireccionamiento autorizados"** en Google Cloud Console.
+> - **Importante**: No sirve modificar esta dirección únicamente en el archivo JSON de la credencial; el cambio debe registrarse directamente en Google Cloud Console. Para más detalles, consulte la [documentación oficial de Google OAuth 2.0](https://developers.google.com/identity/protocols/oauth2/web-server).
+
 4. Configure las dos variables de entorno en su servidor o archivo de entorno (Podman / Docker / Linux):
    ```bash
    export OAUTH_CLIENT_ID="xxxxxxxxx-xxxxxxxxxx.apps.googleusercontent.com"
