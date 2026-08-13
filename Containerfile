@@ -20,9 +20,9 @@ ENV PATH=/root/.local/bin:$PATH \
     FLASK_APP=run.py \
     PORT=5000 \
     BASE_URL=horarios.curza.com.ar \
-    APP_VERSION=0.1.20260812161901
+    APP_VERSION=0.1.20260813130743
 
-LABEL org.opencontainers.image.version="0.1.20260812161901"
+LABEL org.opencontainers.image.version="0.1.20260813130743"
 
 COPY --from=builder /root/.local /root/.local
 COPY . .

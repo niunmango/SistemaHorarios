@@ -177,7 +177,7 @@ Los valores por defecto se pueden sobrescribir exportando variables en el entorn
 | `APP_PORT` | Puerto del host para acceder a la aplicación | `5000` |
 | `SECRET_KEY` | Clave de firma de sesiones de Flask | `cambiar-clave-secreta-curzas-2026` |
 | `BASE_URL` | URL base o dominio principal del sitio | `horarios.curza.com.ar` |
-| `APP_VERSION` | Versión del sistema (`0.1.YYYYMMDDHHMMSS`) | `0.1.20260812161901` |
+| `APP_VERSION` | Versión del sistema (`0.1.YYYYMMDDHHMMSS`) | `0.1.20260813130743` |
 | `OAUTH_CLIENT_ID` | ID de cliente de Google OAuth 2.0 | *(vacío)* |
 | `OAUTH_CLIENT_SECRET` | Secreto de cliente de Google OAuth 2.0 | *(vacío)* |
 

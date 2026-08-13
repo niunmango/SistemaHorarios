@@ -1,7 +1,7 @@
 import os
 
 VERSION_FILE = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'VERSION')
-DEFAULT_VERSION = '0.1.20260812161901'
+DEFAULT_VERSION = '0.1.20260813130743'
 
 def get_version():
     """Retorna la versión actual del sistema."""

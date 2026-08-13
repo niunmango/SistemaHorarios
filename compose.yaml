@@ -55,7 +55,7 @@ services:
       SECRET_KEY: ${SECRET_KEY:-cambiar-clave-secreta-curzas-2026}
       DATABASE_URL: mysql+pymysql://${MARIADB_USER:-horarios}:${MARIADB_PASSWORD:-horarios_secreto}@${DB_IP:-172.30.0.10}:3306/${MARIADB_DATABASE:-sistema_horarios}?charset=utf8mb4
       BASE_URL: ${BASE_URL:-horarios.curza.com.ar}
-      APP_VERSION: ${APP_VERSION:-0.1.20260812161901}
+      APP_VERSION: ${APP_VERSION:-0.1.20260813130743}
       OAUTH_CLIENT_ID: ${OAUTH_CLIENT_ID:-}
       OAUTH_CLIENT_SECRET: ${OAUTH_CLIENT_SECRET:-}
     depends_on:
