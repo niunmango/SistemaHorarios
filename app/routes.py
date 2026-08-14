@@ -498,33 +498,48 @@ def materias():
     if current_user.is_alumno:
         flash('No tienes permisos para acceder a materias.', 'danger')
         return redirect(url_for('main.horarios'))
-    carrera_id = request.args.get('carrera_id', type=int)
+    
+    carrera_val = request.args.get('carrera_id', '').strip()
     cuatrimestre = request.args.get('cuatrimestre', type=int)
     anio = request.args.get('anio', type=int)
-    profesor_id = request.args.get('profesor_id', type=int)
-    solo_externas = request.args.get('externas', type=int)
 
     query = Asignatura.query
-    if solo_externas:
-        query = query.filter_by(es_externa=True)
+    solo_externas = False
+    carrera_id = None
+
+    if carrera_val in ['externas', 'externos', 'EXTERNA']:
+        solo_externas = True
+        query = query.filter((Asignatura.es_externa == True) | (Asignatura.carrera.has(codigo='EXTERNA')))
+    elif carrera_val.isdigit():
+        c_id = int(carrera_val)
+        c_obj = db.session.get(Carrera, c_id)
+        if c_obj and c_obj.codigo == 'EXTERNA':
+            solo_externas = True
+            query = query.filter((Asignatura.es_externa == True) | (Asignatura.carrera_id == c_id))
+        else:
+            carrera_id = c_id
+            query = query.filter(Asignatura.carrera_id == c_id, Asignatura.es_externa == False)
+    elif carrera_val:
+        # Intento de búsqueda por código (ej: TUASSL o TUDW)
+        c_obj = Carrera.query.filter_by(codigo=carrera_val.upper()).first()
+        if c_obj:
+            if c_obj.codigo == 'EXTERNA':
+                solo_externas = True
+                query = query.filter((Asignatura.es_externa == True) | (Asignatura.carrera_id == c_obj.id))
+            else:
+                carrera_id = c_obj.id
+                query = query.filter(Asignatura.carrera_id == c_obj.id, Asignatura.es_externa == False)
     else:
+        # "Todas las Carreras" regulares por defecto
         query = query.filter_by(es_externa=False)
 
-    if carrera_id:
-        query = query.filter_by(carrera_id=carrera_id)
     if cuatrimestre:
         query = query.filter_by(cuatrimestre=cuatrimestre)
     if anio:
         query = query.filter_by(anio_cursada=anio)
-    if profesor_id:
-        query = query.filter(
-            (Asignatura.profesor_pad_id == profesor_id) |
-            (Asignatura.profesores_ayp.any(id=profesor_id))
-        )
 
     lista_materias = query.order_by(Asignatura.carrera_id, Asignatura.anio_cursada, Asignatura.cuatrimestre).all()
     carreras = Carrera.query.filter(Carrera.codigo != 'EXTERNA').all()
-    profesores = Profesor.query.order_by(Profesor.nombre_completo).all()
 
     reporte = auditar_sistema_completo()
 
@@ -532,11 +547,10 @@ def materias():
                            materias=lista_materias,
                            asignaturas=lista_materias,
                            carreras=carreras,
-                           profesores=profesores,
                            carrera_id=carrera_id,
+                           carrera_val=carrera_val,
                            cuatrimestre=cuatrimestre,
                            anio=anio,
-                           profesor_id=profesor_id,
                            solo_externas=solo_externas,
                            reporte=reporte)
 

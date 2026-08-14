@@ -19,22 +19,23 @@
         {% endif %}
     </div>
 
-    <!-- Filter Bar (Filtros Desplegables Combinables) -->
+    <!-- Filter Bar (3 Filtros Desplegables Combinables) -->
     <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 shadow-xl no-print">
-        <form method="GET" action="{{ url_for('main.materias') }}" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 items-end">
+        <form method="GET" action="{{ url_for('main.materias') }}" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 items-end">
             
-            <!-- Carrera -->
+            <!-- 1. Carrera / Tipo -->
             <div>
                 <label for="carrera_id" class="block text-[11px] font-semibold uppercase tracking-wider text-slate-400 mb-1">Carrera</label>
                 <select id="carrera_id" name="carrera_id" onchange="this.form.submit()" class="w-full bg-slate-950 border border-slate-700/80 rounded-xl px-3 py-2 text-xs text-white focus:ring-2 focus:ring-blue-500 focus:outline-none">
                     <option value="">Todas las Carreras</option>
                     {% for c in carreras %}
-                    <option value="{{ c.id }}" {% if carrera_id == c.id and not solo_externas %}selected{% endif %}>{{ c.codigo }} - {{ c.nombre }}</option>
+                    <option value="{{ c.id }}" {% if carrera_val == c.id|string or (carrera_id == c.id and not solo_externas) %}selected{% endif %}>{{ c.codigo }}</option>
                     {% endfor %}
+                    <option value="externas" {% if solo_externas or carrera_val == 'externas' or carrera_val == 'externos' %}selected{% endif %}>Externos</option>
                 </select>
             </div>
 
-            <!-- Cuatrimestre -->
+            <!-- 2. Cuatrimestre -->
             <div>
                 <label for="cuatrimestre" class="block text-[11px] font-semibold uppercase tracking-wider text-slate-400 mb-1">Cuatrimestre</label>
                 <select id="cuatrimestre" name="cuatrimestre" onchange="this.form.submit()" class="w-full bg-slate-950 border border-slate-700/80 rounded-xl px-3 py-2 text-xs text-white focus:ring-2 focus:ring-blue-500 focus:outline-none">
@@ -44,7 +45,7 @@
                 </select>
             </div>
 
-            <!-- Año -->
+            <!-- 3. Año de Cursada -->
             <div>
                 <label for="anio" class="block text-[11px] font-semibold uppercase tracking-wider text-slate-400 mb-1">Año de Cursada</label>
                 <select id="anio" name="anio" onchange="this.form.submit()" class="w-full bg-slate-950 border border-slate-700/80 rounded-xl px-3 py-2 text-xs text-white focus:ring-2 focus:ring-blue-500 focus:outline-none">
@@ -55,20 +56,9 @@
                 </select>
             </div>
 
-            <!-- Docente / Profesor -->
-            <div>
-                <label for="profesor_id" class="block text-[11px] font-semibold uppercase tracking-wider text-slate-400 mb-1">Docente (PAD / AYP)</label>
-                <select id="profesor_id" name="profesor_id" onchange="this.form.submit()" class="w-full bg-slate-950 border border-slate-700/80 rounded-xl px-3 py-2 text-xs text-white focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                    <option value="">Todos los Docentes</option>
-                    {% for p in profesores %}
-                    <option value="{{ p.id }}" {% if profesor_id == p.id %}selected{% endif %}>{{ p.nombre_completo }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-
             <!-- Acciones / Limpiar Filtros -->
             <div class="flex items-center gap-2">
-                {% if carrera_id or cuatrimestre or anio or profesor_id or solo_externas %}
+                {% if carrera_val or cuatrimestre or anio or solo_externas %}
                 <a href="{{ url_for('main.materias') }}" class="w-full text-center px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white font-semibold text-xs rounded-xl border border-slate-700 shadow transition-all flex items-center justify-center gap-1.5" title="Restablecer todos los filtros">
                     <i class="fa-solid fa-filter-circle-xmark text-rose-400"></i> Limpiar Filtros
                 </a>

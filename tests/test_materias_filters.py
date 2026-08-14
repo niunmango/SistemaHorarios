@@ -30,7 +30,8 @@ class TestMateriasFilters(unittest.TestCase):
         # Carreras
         self.c1 = Carrera(codigo='TUASSL', nombre='Tecnicatura en Software Libre')
         self.c2 = Carrera(codigo='TUDW', nombre='Tecnicatura en Desarrollo Web')
-        db.session.add_all([self.c1, self.c2])
+        self.c_ext = Carrera(codigo='EXTERNA', nombre='Materias Externas')
+        db.session.add_all([self.c1, self.c2, self.c_ext])
         db.session.commit()
 
         # Docentes
@@ -48,8 +49,10 @@ class TestMateriasFilters(unittest.TestCase):
         self.m3 = Asignatura(carrera_id=self.c2.id, anio_cursada=1, cuatrimestre=1, nombre='Prog Web 1', carga_horaria_semanal=8, profesor_pad_id=self.p1.id)
         # TUDW, 2do año, 2do cuatri
         self.m4 = Asignatura(carrera_id=self.c2.id, anio_cursada=2, cuatrimestre=2, nombre='Prog Web 2', carga_horaria_semanal=8, profesor_pad_id=self.p2.id)
+        # Externa, 1er cuatri
+        self.m_ext = Asignatura(carrera_id=self.c_ext.id, anio_cursada=1, cuatrimestre=1, nombre='Física Exactas', carga_horaria_semanal=4, es_externa=True)
 
-        db.session.add_all([self.m1, self.m2, self.m3, self.m4])
+        db.session.add_all([self.m1, self.m2, self.m3, self.m4, self.m_ext])
         db.session.commit()
 
     def tearDown(self):
@@ -71,6 +74,7 @@ class TestMateriasFilters(unittest.TestCase):
         self.assertNotIn('Redes SL', html)
         self.assertNotIn('Prog Web 1', html)
         self.assertNotIn('Prog Web 2', html)
+        self.assertNotIn('Física Exactas', html)
 
     def test_filtro_cuatrimestre_solo(self):
         """Filtrar por 2° cuatrimestre debe mostrar Redes SL y Prog Web 2."""
@@ -96,20 +100,19 @@ class TestMateriasFilters(unittest.TestCase):
         self.assertNotIn('Redes SL', html)
         self.assertNotIn('Prog Web 1', html)
 
-    def test_filtro_por_docente(self):
-        """Filtrar por Docente Uno debe mostrar Intro SL y Prog Web 1."""
+    def test_filtro_externos(self):
+        """Filtrar por 'externas' debe mostrar materias externas."""
         self._login()
-        res = self.client.get(f'/materias?profesor_id={self.p1.id}')
+        res = self.client.get('/materias?carrera_id=externas')
         self.assertEqual(res.status_code, 200)
         html = res.get_data(as_text=True)
 
-        self.assertIn('Intro SL', html)
-        self.assertIn('Prog Web 1', html)
-        self.assertNotIn('Redes SL', html)
-        self.assertNotIn('Prog Web 2', html)
+        self.assertIn('Física Exactas', html)
+        self.assertNotIn('Intro SL', html)
+        self.assertNotIn('Prog Web 1', html)
 
-    def test_renderizado_selects_desplegables(self):
-        """Verifica que se rendericen los select desplegables de carrera, cuatrimestre, anio y profesor."""
+    def test_renderizado_tres_selects_desplegables(self):
+        """Verifica que se rendericen exactamente los select desplegables de carrera, cuatrimestre y anio."""
         self._login()
         res = self.client.get('/materias')
         html = res.get_data(as_text=True)
@@ -117,7 +120,8 @@ class TestMateriasFilters(unittest.TestCase):
         self.assertIn('select id="carrera_id"', html)
         self.assertIn('select id="cuatrimestre"', html)
         self.assertIn('select id="anio"', html)
-        self.assertIn('select id="profesor_id"', html)
+        self.assertNotIn('select id="profesor_id"', html)
+        self.assertIn('Externos', html)
 
 
 if __name__ == '__main__':
