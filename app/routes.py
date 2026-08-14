@@ -500,6 +500,8 @@ def materias():
         return redirect(url_for('main.horarios'))
     carrera_id = request.args.get('carrera_id', type=int)
     cuatrimestre = request.args.get('cuatrimestre', type=int)
+    anio = request.args.get('anio', type=int)
+    profesor_id = request.args.get('profesor_id', type=int)
     solo_externas = request.args.get('externas', type=int)
 
     query = Asignatura.query
@@ -512,9 +514,17 @@ def materias():
         query = query.filter_by(carrera_id=carrera_id)
     if cuatrimestre:
         query = query.filter_by(cuatrimestre=cuatrimestre)
+    if anio:
+        query = query.filter_by(anio_cursada=anio)
+    if profesor_id:
+        query = query.filter(
+            (Asignatura.profesor_pad_id == profesor_id) |
+            (Asignatura.profesores_ayp.any(id=profesor_id))
+        )
 
     lista_materias = query.order_by(Asignatura.carrera_id, Asignatura.anio_cursada, Asignatura.cuatrimestre).all()
     carreras = Carrera.query.filter(Carrera.codigo != 'EXTERNA').all()
+    profesores = Profesor.query.order_by(Profesor.nombre_completo).all()
 
     reporte = auditar_sistema_completo()
 
@@ -522,8 +532,11 @@ def materias():
                            materias=lista_materias,
                            asignaturas=lista_materias,
                            carreras=carreras,
+                           profesores=profesores,
                            carrera_id=carrera_id,
                            cuatrimestre=cuatrimestre,
+                           anio=anio,
+                           profesor_id=profesor_id,
                            solo_externas=solo_externas,
                            reporte=reporte)
 
