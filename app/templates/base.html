@@ -280,7 +280,7 @@
         {% endwith %}
     </div>
 
-    <!-- Banner Global: Sistema Congelado -->
+    {# Banner Global: Sistema Congelado (Visible para Docentes, Gestores y Administradores) #}
     {% if config and config.congelado and current_user.is_authenticated and not current_user.is_alumno %}
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-2 w-full no-print">
         <div class="bg-amber-950/60 border border-amber-500/40 rounded-xl p-3 flex items-center justify-between shadow-lg">

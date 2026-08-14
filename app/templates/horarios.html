@@ -17,7 +17,7 @@
                     <span>CURZAS — Universidad Nacional del Comahue</span>
                 </div>
                 <h1 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">Horarios — Grilla Semanal de Clases</h1>
-                <p class="text-slate-400 text-xs sm:text-sm mt-0.5">Consulta pública oficial de horarios (08:00 a 21:00 hs) para carreras de grado y pregrado.{% if current_user.is_authenticated %}<span class="text-blue-400 font-semibold ml-1">💡 Tip: Arrastra y suelta las clases para reubicarlas.</span>{% endif %}</p>
+                <p class="text-slate-400 text-xs sm:text-sm mt-0.5">Consulta pública oficial de horarios (08:00 a 21:00 hs) para carreras de grado y pregrado.{% if current_user.is_authenticated and not current_user.is_alumno and not config.congelado %}<span class="text-blue-400 font-semibold ml-1">💡 Tip: Arrastra y suelta las clases para reubicarlas.</span>{% endif %}</p>
             </div>
         </div>
 
@@ -144,12 +144,30 @@
         <table class="w-full border-collapse text-left table-fixed">
             <thead>
                 <tr class="bg-slate-800 text-slate-300 text-xs font-bold uppercase tracking-wider border-b border-slate-700">
-                    <th class="py-2 px-2 text-center w-16 sm:w-20 border-r border-slate-700/80">Horario</th>
-                    <th class="py-2 px-2 text-center border-r border-slate-700/80">Lunes</th>
-                    <th class="py-2 px-2 text-center border-r border-slate-700/80">Martes</th>
-                    <th class="py-2 px-2 text-center border-r border-slate-700/80">Miércoles</th>
-                    <th class="py-2 px-2 text-center border-r border-slate-700/80">Jueves</th>
-                    <th class="py-2 px-2 text-center">Viernes</th>
+                    <th class="py-2 px-1 sm:px-2 text-center w-8 sm:w-16 md:w-20 border-r border-slate-700/80">
+                        <span class="sm:hidden print:hidden text-[10px]">Hs</span>
+                        <span class="hidden sm:inline print:inline">Horario</span>
+                    </th>
+                    <th class="py-2 px-0.5 sm:px-2 text-center border-r border-slate-700/80">
+                        <span class="sm:hidden print:hidden text-[10px]">Lun</span>
+                        <span class="hidden sm:inline print:inline">Lunes</span>
+                    </th>
+                    <th class="py-2 px-0.5 sm:px-2 text-center border-r border-slate-700/80">
+                        <span class="sm:hidden print:hidden text-[10px]">Mar</span>
+                        <span class="hidden sm:inline print:inline">Martes</span>
+                    </th>
+                    <th class="py-2 px-0.5 sm:px-2 text-center border-r border-slate-700/80">
+                        <span class="sm:hidden print:hidden text-[10px]">Mié</span>
+                        <span class="hidden sm:inline print:inline">Miércoles</span>
+                    </th>
+                    <th class="py-2 px-0.5 sm:px-2 text-center border-r border-slate-700/80">
+                        <span class="sm:hidden print:hidden text-[10px]">Jue</span>
+                        <span class="hidden sm:inline print:inline">Jueves</span>
+                    </th>
+                    <th class="py-2 px-0.5 sm:px-2 text-center">
+                        <span class="sm:hidden print:hidden text-[10px]">Vie</span>
+                        <span class="hidden sm:inline print:inline">Viernes</span>
+                    </th>
                 </tr>
             </thead>
             <tbody class="divide-y divide-slate-800 text-xs">
@@ -157,9 +175,10 @@
                 {% set is_bottom_row = (hour >= 16) %}
                 <tr class="h-11 hover:bg-slate-800/30 transition-colors">
                     
-                    <!-- Time Label Slot (08:00 to 21:00) -->
-                    <td class="py-1 px-1 font-mono font-bold text-[11px] text-slate-400 bg-slate-950/60 text-center border-r border-slate-700/80 select-none">
-                        {{ "%02d:00"|format(hour) }}
+                    <!-- Time Label Slot (08:00 to 21:00 on desktop, 08 to 21 on mobile) -->
+                    <td class="py-1 px-0.5 sm:px-1 font-mono font-bold text-[10px] sm:text-[11px] text-slate-400 bg-slate-950/60 text-center border-r border-slate-700/80 select-none whitespace-nowrap">
+                        <span class="sm:hidden print:hidden">{{ "%02d"|format(hour) }}</span>
+                        <span class="hidden sm:inline print:inline">{{ "%02d:00"|format(hour) }}</span>
                     </td>
 
                     <!-- Days 0..4 (Lunes..Viernes) Drop Targets -->
@@ -181,7 +200,7 @@
                             <div class="grid grid-cols-{{ matching_blocks|length if matching_blocks|length <= 3 else 3 }} gap-1 h-full w-full">
                             {% for b in matching_blocks %}
                                 {% set es_conflicto = (b.id in ids_conflictos) %}
-                                {% set can_drag = current_user.is_authenticated and current_user.puede_editar_bloque(b) %}
+                                {% set can_drag = current_user.is_authenticated and current_user.puede_editar_bloque(b) and not config.congelado %}
                                 
                                 <div id="block-card-{{ b.id }}"
                                      {% if can_drag %}
@@ -193,10 +212,11 @@
                                     
                                     <div class="flex items-center justify-between gap-0.5 leading-none">
                                         <span class="font-extrabold truncate text-[10px] text-white">
-                                            {% if es_conflicto %}⚠️ {% endif %}{{ b.asignatura.nombre }}
+                                             {% if es_conflicto %}⚠️ {% endif %}{{ b.asignatura.nombre }}
                                         </span>
-                                        <span class="text-[8px] font-mono shrink-0 opacity-80">
-                                            {{ b.hora_inicio.strftime('%H:%M') }}-{{ b.hora_fin.strftime('%H:%M') }}
+                                        <span class="text-[8px] font-mono shrink-0 opacity-80 whitespace-nowrap">
+                                            <span class="sm:hidden print:hidden">{% if b.hora_inicio.minute == 0 and b.hora_fin.minute == 0 %}{{ b.hora_inicio.strftime('%H') }}-{{ b.hora_fin.strftime('%H') }}{% else %}{{ b.hora_inicio.strftime('%H:%M') }}-{{ b.hora_fin.strftime('%H:%M') }}{% endif %}</span>
+                                            <span class="hidden sm:inline print:inline">{{ b.hora_inicio.strftime('%H:%M') }}-{{ b.hora_fin.strftime('%H:%M') }}</span>
                                         </span>
                                     </div>
 
@@ -267,7 +287,7 @@
                                             {% endif %}
                                         </div>
 
-                                        {% if current_user.is_authenticated and current_user.puede_editar_bloque(b) %}
+                                        {% if current_user.is_authenticated and current_user.puede_editar_bloque(b) and not config.congelado %}
                                         <div class="pt-2 border-t border-slate-800 flex items-center justify-between">
                                             <a href="{{ url_for('main.editar_bloque', id=b.id) }}" class="px-2.5 py-1 bg-blue-600 hover:bg-blue-500 text-white font-bold text-[11px] rounded-lg shadow flex items-center gap-1 transition-all">
                                                 <i class="fa-solid fa-pen-to-square"></i> Editar / Reubicar
