@@ -15,7 +15,7 @@ def seed_database():
     print("🌱 Inicializando datos base del CURZAS (Profesores 1er y 2do Cuatri, TUASSL, TUDW, Aulas)...")
 
     # 1. Plantel Docente Completo
-    p_ramiro = Profesor(nombre_completo='Ramiro García Poggi', categoria_habitual='PAD', email='ramiro.garcia@curza.com.ar')
+    p_ramiro = Profesor(nombre_completo='Ramiro García Poggi', categoria_habitual='PAD', email='docente@curza.com.ar')
     p_fabian = Profesor(nombre_completo='Néstor Fabián Imberti', categoria_habitual='PAD', email='fabian.imberti@curza.com.ar')
     p_carolina = Profesor(nombre_completo='Carolina Juárez', categoria_habitual='PAD', email='carolina.juarez@curza.com.ar')
     p_manuel = Profesor(nombre_completo='Manuel Jove López', categoria_habitual='AYP', email='manuel.jove@curza.com.ar')
@@ -56,7 +56,7 @@ def seed_database():
     gestor = User(username='gestor', email='gestor.aulas@curza.com.ar', nombre_completo='Gestor de Aulas CURZAS', role='gestor_aulas')
     gestor.set_password('gestor123')
 
-    docente = User(username='docente', email='ramiro.garcia@curza.com.ar', nombre_completo='Prof. Ramiro García Poggi', role='docente', profesor=p_ramiro)
+    docente = User(username='docente', email='docente@curza.com.ar', nombre_completo='Docente', role='docente', profesor=p_ramiro)
     docente.set_password('docente123')
 
     alumno = User(username='alumno', email='alumno@curza.com.ar', nombre_completo='Estudiante Universitario', role='alumno')
