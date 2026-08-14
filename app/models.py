@@ -69,6 +69,10 @@ class User(UserMixin, db.Model):
     def is_alumno(self):
         return self.role == 'alumno'
     
+    @property
+    def is_profesor(self):
+        return self.role == 'docente'
+    
     def puede_editar_bloque(self, bloque):
         if self.is_gestor:
             return True

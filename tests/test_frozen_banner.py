@@ -119,6 +119,68 @@ class TestFrozenBannerVisibility(unittest.TestCase):
         html_alumno = res_alumno.get_data(as_text=True)
         self.assertNotIn('Sistema Congelado — No se permiten cambios', html_alumno)
 
+    def test_menu_opciones_alumno_solo_horarios_y_aulas(self):
+        """
+        Un usuario con rol Alumno debe ver en su menú únicamente Horarios y Aulas.
+        No debe ver enlaces a Dashboard, Materias, Profesores, Bloqueos, Solicitudes, Auditoría ni Usuarios.
+        """
+        self._login('alumno_test')
+        res = self.client.get('/horarios')
+        html = res.get_data(as_text=True)
+
+        # Debe ver Horarios y Aulas
+        self.assertIn('/horarios', html)
+        self.assertIn('/aulas', html)
+
+        # No debe ver opciones de gestión ni administración
+        self.assertNotIn('href="/dashboard"', html)
+        self.assertNotIn('href="/materias"', html)
+        self.assertNotIn('href="/profesores"', html)
+        self.assertNotIn('href="/bloqueos_externos"', html)
+        self.assertNotIn('href="/solicitudes"', html)
+        self.assertNotIn('href="/auditoria"', html)
+        self.assertNotIn('href="/usuarios"', html)
+
+    def test_menu_opciones_docente(self):
+        """
+        Un usuario con rol Docente debe ver Mis Horarios, Mis Cátedras y Aulas.
+        No debe ver Dashboard, Profesores, Bloqueos ni Usuarios.
+        """
+        self._login('docente_test')
+        res = self.client.get('/horarios')
+        html = res.get_data(as_text=True)
+
+        self.assertIn('/horarios', html)
+        self.assertIn('/materias', html)
+        self.assertIn('/aulas', html)
+
+        self.assertNotIn('href="/dashboard"', html)
+        self.assertNotIn('href="/profesores"', html)
+        self.assertNotIn('href="/bloqueos_externos"', html)
+        self.assertNotIn('href="/usuarios"', html)
+
+    def test_menu_opciones_gestor_y_admin(self):
+        """
+        Gestor ve Dashboard, Horarios, Materias, Profesores, Bloqueos, Aulas, Solicitudes, Auditoría.
+        Admin además ve Usuarios.
+        """
+        # Gestor
+        self._login('gestor_test')
+        res_g = self.client.get('/horarios')
+        html_g = res_g.get_data(as_text=True)
+        self.assertIn('href="/dashboard"', html_g)
+        self.assertIn('href="/materias"', html_g)
+        self.assertIn('href="/profesores"', html_g)
+        self.assertIn('href="/auditoria"', html_g)
+        self.assertNotIn('href="/usuarios"', html_g)
+
+        # Admin
+        self._login('admin_test')
+        res_a = self.client.get('/horarios')
+        html_a = res_a.get_data(as_text=True)
+        self.assertIn('href="/dashboard"', html_a)
+        self.assertIn('href="/usuarios"', html_a)
+
 
 if __name__ == '__main__':
     unittest.main()
