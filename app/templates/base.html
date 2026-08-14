@@ -131,10 +131,10 @@
                         {% elif current_user.role == 'docente' %}
                         <!-- Links para vista Profesor / Docente -->
                         <a href="{{ url_for('main.horarios') }}" class="px-2.5 py-1.5 rounded-lg text-xs xl:text-sm font-medium transition-colors whitespace-nowrap {% if request.endpoint == 'main.horarios' %}bg-blue-600/30 text-blue-400 border border-blue-500/30{% else %}text-slate-300 hover:bg-slate-700/50 hover:text-white{% endif %}">
-                            <i class="fa-solid fa-calendar-days mr-1"></i> Mis Horarios
+                            <i class="fa-solid fa-calendar-days mr-1"></i> Horarios
                         </a>
                         <a href="{{ url_for('main.materias') }}" class="px-2.5 py-1.5 rounded-lg text-xs xl:text-sm font-medium transition-colors whitespace-nowrap {% if 'materia' in request.endpoint %}bg-blue-600/30 text-blue-400 border border-blue-500/30{% else %}text-slate-300 hover:bg-slate-700/50 hover:text-white{% endif %}">
-                            <i class="fa-solid fa-book mr-1"></i> Mis Cátedras
+                            <i class="fa-solid fa-book mr-1"></i> Materias
                         </a>
                         <a href="{{ url_for('main.aulas') }}" class="px-2.5 py-1.5 rounded-lg text-xs xl:text-sm font-medium transition-colors whitespace-nowrap {% if request.endpoint == 'main.aulas' %}bg-blue-600/30 text-blue-400 border border-blue-500/30{% else %}text-slate-300 hover:bg-slate-700/50 hover:text-white{% endif %}">
                             <i class="fa-solid fa-door-open mr-1"></i> Aulas
@@ -224,10 +224,10 @@
                 {% elif current_user.role == 'docente' %}
                 <!-- Mobile Docente -->
                 <a href="{{ url_for('main.horarios') }}" class="block px-3 py-2 rounded-lg text-sm font-medium {% if request.endpoint == 'main.horarios' %}bg-blue-600/30 text-blue-400 border border-blue-500/30{% else %}text-slate-300 hover:bg-slate-700/50 hover:text-white{% endif %}">
-                    <i class="fa-solid fa-calendar-days w-5"></i> Mis Horarios
+                    <i class="fa-solid fa-calendar-days w-5"></i> Horarios
                 </a>
                 <a href="{{ url_for('main.materias') }}" class="block px-3 py-2 rounded-lg text-sm font-medium {% if 'materia' in request.endpoint %}bg-blue-600/30 text-blue-400 border border-blue-500/30{% else %}text-slate-300 hover:bg-slate-700/50 hover:text-white{% endif %}">
-                    <i class="fa-solid fa-book w-5"></i> Mis Cátedras
+                    <i class="fa-solid fa-book w-5"></i> Materias
                 </a>
                 <a href="{{ url_for('main.aulas') }}" class="block px-3 py-2 rounded-lg text-sm font-medium {% if request.endpoint == 'main.aulas' %}bg-blue-600/30 text-blue-400 border border-blue-500/30{% else %}text-slate-300 hover:bg-slate-700/50 hover:text-white{% endif %}">
                     <i class="fa-solid fa-door-open w-5"></i> Aulas

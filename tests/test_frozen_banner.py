@@ -143,7 +143,7 @@ class TestFrozenBannerVisibility(unittest.TestCase):
 
     def test_menu_opciones_docente(self):
         """
-        Un usuario con rol Docente debe ver Mis Horarios, Mis Cátedras y Aulas.
+        Un usuario con rol Docente debe ver Horarios, Materias y Aulas.
         No debe ver Dashboard, Profesores, Bloqueos ni Usuarios.
         """
         self._login('docente_test')
