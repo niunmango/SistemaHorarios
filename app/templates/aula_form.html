@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+
+{% block title %}{% if aula %}Editar Aula - {{ aula.nombre }}{% else %}Nueva Aula / Espacio Físico{% endif %}{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto py-6">
+
+    <div class="bg-slate-800 border border-slate-700/80 rounded-2xl shadow-2xl p-6 sm:p-8 space-y-6">
+        
+        <div class="flex items-center justify-between">
+            <div>
+                <h1 class="text-2xl font-bold text-white tracking-tight">
+                    {% if aula %}Editar Espacio Físico / Aula{% else %}Alta de Nueva Aula / Espacio Físico{% endif %}
+                </h1>
+                <p class="text-slate-400 text-sm mt-1">Configure el tipo de espacio, capacidad máxima y equipamiento instalado</p>
+            </div>
+            <div class="w-12 h-12 rounded-2xl {% if aula and aula.es_laboratorio %}bg-emerald-500/20 text-emerald-400 border border-emerald-500/30{% else %}bg-indigo-500/20 text-indigo-400 border border-indigo-500/30{% endif %} flex items-center justify-center text-2xl shrink-0">
+                <i class="fa-solid {% if aula and aula.es_laboratorio %}fa-desktop{% else %}fa-chalkboard{% endif %}"></i>
+            </div>
+        </div>
+
+        <form method="POST" action="{% if aula %}{{ url_for('main.editar_aula', id=aula.id) }}{% else %}{{ url_for('main.nueva_aula') }}{% endif %}" class="space-y-5">
+            
+            <!-- Nombre del Aula -->
+            <div>
+                <label for="nombre" class="block text-sm font-semibold text-slate-300 mb-1">Nombre del Aula / Espacio *</label>
+                <input type="text" id="nombre" name="nombre" required value="{{ aula.nombre if aula else '' }}"
+                       class="w-full px-4 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                       placeholder="Ej: Sala 1 (JCBrocca), Aula 11, Laboratorio Central...">
+            </div>
+
+            <!-- Tipo de Espacio y Capacidad Máxima -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label for="tipo_espacio" class="block text-sm font-semibold text-slate-300 mb-1">Tipo de Espacio *</label>
+                    <select name="tipo_espacio" id="tipo_espacio" required class="w-full px-4 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                        <option value="laboratorio" {% if aula and aula.es_laboratorio %}selected{% endif %}>
+                            💻 Laboratorio de Informática
+                        </option>
+                        <option value="aula_comun" {% if not aula or not aula.es_laboratorio %}selected{% endif %}>
+                            🏫 Aula de Clases / Sala Híbrida
+                        </option>
+                    </select>
+                </div>
+
+                <div>
+                    <label for="capacidad" class="block text-sm font-semibold text-slate-300 mb-1">Capacidad Máxima (Personas) *</label>
+                    <input type="number" id="capacidad" name="capacidad" required min="1" max="500"
+                           value="{{ aula.capacidad if aula else '30' }}"
+                           class="w-full px-4 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white font-mono focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                           placeholder="30">
+                </div>
+            </div>
+
+            <!-- Equipamiento Instalado -->
+            <div>
+                <label for="equipamiento" class="block text-sm font-semibold text-slate-300 mb-1">Equipamiento Instalado</label>
+                <textarea id="equipamiento" name="equipamiento" rows="3"
+                          class="w-full px-4 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                          placeholder="Ej: 30 PCs con Linux/Windows, Proyector HDMI, Sistema de videoconferencia, Pizarrón...">{{ aula.equipamiento if aula else '' }}</textarea>
+                <p class="text-xs text-slate-400 mt-1">Describa las computadoras, periféricos, proyector o conectividad disponible en el aula.</p>
+            </div>
+
+            <!-- Aula Activa -->
+            <div class="flex items-center space-x-3 pt-2">
+                <input type="checkbox" name="activa" id="activa" value="1"
+                       {% if not aula or aula.activa %}checked{% endif %}
+                       class="rounded bg-slate-900 border-slate-700 text-blue-600 focus:ring-blue-500 w-4 h-4">
+                <label for="activa" class="text-sm font-medium text-slate-300">
+                    Aula activa y disponible para asignación de horarios
+                </label>
+            </div>
+
+            <!-- Botones -->
+            <div class="flex items-center justify-between pt-4 border-t border-slate-700">
+                <a href="{{ url_for('main.aulas') }}" class="px-4 py-2.5 text-slate-400 hover:text-white text-sm font-semibold">Cancelar</a>
+                <button type="submit" class="px-6 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-semibold text-sm rounded-xl shadow-lg transition-all flex items-center gap-2">
+                    <i class="fa-solid fa-floppy-disk"></i> Guardar Espacio Físico
+                </button>
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+{% endblock %}

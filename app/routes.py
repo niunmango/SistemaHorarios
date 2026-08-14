@@ -447,8 +447,8 @@ def editar_profesor(id):
 @main_bp.route('/profesores/<int:id>/eliminar', methods=['POST'])
 @login_required
 def eliminar_profesor(id):
-    if not current_user.is_gestor:
-        flash('No tienes permisos para eliminar profesores.', 'danger')
+    if not current_user.is_admin:
+        flash('Solo el administrador de la plataforma puede dar de baja profesores.', 'danger')
         return redirect(url_for('main.profesores'))
     
     if ConfiguracionSistema.esta_congelado():
@@ -456,17 +456,38 @@ def eliminar_profesor(id):
         return redirect(url_for('main.profesores'))
 
     prof = db.session.get(Profesor, id)
-    if prof:
-        # Logging de auditoría
-        guardar_auditoria(
-            accion="eliminar_profesor",
-            entidad_tipo="profesor",
-            entidad_id=prof.id,
-            detalles={"nombre_completo": prof.nombre_completo, "id": prof.id}
-        )
-        db.session.delete(prof)
-        db.session.commit()
-        flash(f'Profesor/a "{prof.nombre_completo}" eliminado con éxito.', 'success')
+    if not prof:
+        flash('Profesor no encontrado.', 'danger')
+        return redirect(url_for('main.profesores'))
+
+    confirm_nombre = request.form.get('confirm_nombre', '').strip()
+    if confirm_nombre != prof.nombre_completo.strip():
+        flash('El nombre ingresado no coincide con el nombre exacto del profesor/a. Eliminación cancelada.', 'danger')
+        return redirect(url_for('main.profesores'))
+
+    # Logging de auditoría
+    guardar_auditoria(
+        accion="eliminar_profesor",
+        entidad_tipo="profesor",
+        entidad_id=prof.id,
+        detalles={
+            "id": prof.id,
+            "nombre_completo": prof.nombre_completo,
+            "categoria": prof.categoria_habitual,
+            "email": prof.email
+        }
+    )
+
+    # Limpiar referencias para mantener integridad de base de datos
+    User.query.filter_by(profesor_id=prof.id).update({'profesor_id': None})
+    SolicitudCambio.query.filter_by(profesor_id=prof.id).delete(synchronize_session=False)
+    Asignatura.query.filter_by(profesor_pad_id=prof.id).update({'profesor_pad_id': None})
+    BloqueHorario.query.filter_by(profesor_id=prof.id).update({'profesor_id': None})
+    prof.asignaturas_ayp = []
+
+    db.session.delete(prof)
+    db.session.commit()
+    flash(f'Profesor/a "{prof.nombre_completo}" dado de baja con éxito.', 'success')
 
     return redirect(url_for('main.profesores'))
 
@@ -659,6 +680,59 @@ def materia_clases(id):
 
     bloques = BloqueHorario.query.filter_by(asignatura_id=asig.id).order_by(BloqueHorario.dia_semana, BloqueHorario.hora_inicio).all()
     return render_template('materia_clases.html', materia=asig, bloques=bloques)
+
+
+@main_bp.route('/materias/<int:id>/eliminar', methods=['POST'])
+@login_required
+def eliminar_materia(id):
+    if not current_user.is_admin:
+        flash('Solo el administrador de la plataforma puede eliminar materias.', 'danger')
+        return redirect(url_for('main.materias'))
+    
+    if ConfiguracionSistema.esta_congelado():
+        flash('El sistema está congelado. No se permiten cambios.', 'warning')
+        return redirect(url_for('main.materias'))
+
+    asig = db.session.get(Asignatura, id)
+    if not asig:
+        flash('Materia no encontrada.', 'danger')
+        return redirect(url_for('main.materias'))
+
+    confirm_nombre = request.form.get('confirm_nombre', '').strip()
+    if confirm_nombre != asig.nombre.strip():
+        flash('El nombre ingresado no coincide con el nombre exacto de la materia. Eliminación cancelada.', 'danger')
+        return redirect(url_for('main.materias'))
+
+    # Limpiar solicitudes de cambio vinculadas a los bloques de esta materia
+    bloque_ids = [b.id for b in asig.bloques_horarios]
+    if bloque_ids:
+        SolicitudCambio.query.filter(SolicitudCambio.bloque_id.in_(bloque_ids)).delete(synchronize_session=False)
+
+    # Logging de auditoría
+    guardar_auditoria(
+        accion='eliminar_materia',
+        entidad_tipo='materia',
+        entidad_id=asig.id,
+        detalles={
+            'id': asig.id,
+            'nombre': asig.nombre,
+            'codigo': asig.codigo,
+            'carrera_id': asig.carrera_id,
+            'anio_cursada': asig.anio_cursada,
+            'cuatrimestre': asig.cuatrimestre,
+            'carga_horaria': asig.carga_horaria_semanal,
+            'bloques_eliminados': len(bloque_ids)
+        }
+    )
+
+    # Limpiar ayudantes de la materia
+    asig.profesores_ayp = []
+
+    db.session.delete(asig)
+    db.session.commit()
+    flash(f'Materia "{asig.nombre}" y sus clases asociadas fueron eliminadas con éxito.', 'success')
+
+    return redirect(url_for('main.materias'))
 
 
 @main_bp.route('/bloques/nuevo', methods=['GET', 'POST'])
@@ -886,6 +960,9 @@ def eliminar_bloque(id):
     
     bloque = db.session.get(BloqueHorario, id)
     if bloque and current_user.puede_editar_bloque(bloque):
+        # Limpiar solicitudes asociadas para evitar conflictos de integridad
+        SolicitudCambio.query.filter_by(bloque_id=bloque.id).delete(synchronize_session=False)
+
         # Logging de auditoria
         guardar_auditoria(
             accion='eliminar_bloque',
@@ -910,6 +987,141 @@ def eliminar_bloque(id):
 def aulas():
     lista_aulas = EspacioFisico.query.order_by(EspacioFisico.nombre).all()
     return render_template('aulas.html', aulas=lista_aulas)
+
+
+@main_bp.route('/aulas/nueva', methods=['GET', 'POST'])
+@login_required
+def nueva_aula():
+    if not current_user.is_gestor:
+        flash('No tienes permisos para crear espacios físicos o aulas.', 'danger')
+        return redirect(url_for('main.aulas'))
+    
+    if ConfiguracionSistema.esta_congelado():
+        flash('El sistema está congelado. No se permiten cambios.', 'warning')
+        return redirect(url_for('main.aulas'))
+
+    if request.method == 'POST':
+        nombre = request.form.get('nombre', '').strip()
+        tipo_espacio = request.form.get('tipo_espacio', 'aula_comun')
+        es_laboratorio = (tipo_espacio == 'laboratorio')
+        capacidad = request.form.get('capacidad', type=int, default=30)
+        equipamiento = request.form.get('equipamiento', '').strip()
+        activa = request.form.get('activa') == '1'
+
+        if not nombre:
+            flash('El nombre del aula es obligatorio.', 'warning')
+            return render_template('aula_form.html', aula=None)
+
+        # Verificar unicidad de nombre
+        existente = EspacioFisico.query.filter_by(nombre=nombre).first()
+        if existente:
+            flash(f'Ya existe un espacio físico con el nombre "{nombre}".', 'danger')
+            return render_template('aula_form.html', aula=None)
+
+        aula = EspacioFisico(
+            nombre=nombre,
+            es_laboratorio=es_laboratorio,
+            capacidad=capacidad,
+            equipamiento=equipamiento,
+            activa=activa
+        )
+        db.session.add(aula)
+        db.session.commit()
+
+        # Logging de auditoría
+        guardar_auditoria(
+            accion='crear_aula',
+            entidad_tipo='aula',
+            entidad_id=aula.id,
+            detalles={
+                'id': aula.id,
+                'nombre': aula.nombre,
+                'es_laboratorio': aula.es_laboratorio,
+                'capacidad': aula.capacidad,
+                'equipamiento': aula.equipamiento,
+                'activa': aula.activa
+            }
+        )
+
+        flash(f'Espacio físico "{aula.nombre}" creado con éxito.', 'success')
+        return redirect(url_for('main.aulas'))
+
+    return render_template('aula_form.html', aula=None)
+
+
+@main_bp.route('/aulas/<int:id>/editar', methods=['GET', 'POST'])
+@login_required
+def editar_aula(id):
+    if not current_user.is_gestor:
+        flash('No tienes permisos para editar espacios físicos o aulas.', 'danger')
+        return redirect(url_for('main.aulas'))
+    
+    if ConfiguracionSistema.esta_congelado():
+        flash('El sistema está congelado. No se permiten cambios.', 'warning')
+        return redirect(url_for('main.aulas'))
+
+    aula = db.session.get(EspacioFisico, id)
+    if not aula:
+        flash('Espacio físico no encontrado.', 'danger')
+        return redirect(url_for('main.aulas'))
+
+    if request.method == 'POST':
+        old_nombre = aula.nombre
+        old_tipo = aula.es_laboratorio
+        old_capacidad = aula.capacidad
+        old_equip = aula.equipamiento
+        old_activa = aula.activa
+
+        nombre = request.form.get('nombre', '').strip()
+        tipo_espacio = request.form.get('tipo_espacio', 'aula_comun')
+        es_laboratorio = (tipo_espacio == 'laboratorio')
+        capacidad = request.form.get('capacidad', type=int, default=30)
+        equipamiento = request.form.get('equipamiento', '').strip()
+        activa = request.form.get('activa') == '1'
+
+        if not nombre:
+            flash('El nombre del aula es obligatorio.', 'warning')
+            return render_template('aula_form.html', aula=aula)
+
+        # Verificar unicidad si cambió el nombre
+        if nombre != aula.nombre:
+            existente = EspacioFisico.query.filter_by(nombre=nombre).first()
+            if existente:
+                flash(f'Ya existe otro espacio físico con el nombre "{nombre}".', 'danger')
+                return render_template('aula_form.html', aula=aula)
+
+        aula.nombre = nombre
+        aula.es_laboratorio = es_laboratorio
+        aula.capacidad = capacidad
+        aula.equipamiento = equipamiento
+        aula.activa = activa
+
+        db.session.commit()
+
+        # Logging de auditoría
+        guardar_auditoria(
+            accion='editar_aula',
+            entidad_tipo='aula',
+            entidad_id=aula.id,
+            detalles={
+                'id': aula.id,
+                'nombre': aula.nombre,
+                'anterior_nombre': old_nombre,
+                'es_laboratorio': aula.es_laboratorio,
+                'anterior_es_laboratorio': old_tipo,
+                'capacidad': aula.capacidad,
+                'anterior_capacidad': old_capacidad,
+                'equipamiento': aula.equipamiento,
+                'anterior_equipamiento': old_equip,
+                'activa': aula.activa,
+                'anterior_activa': old_activa
+            }
+        )
+
+        flash(f'Espacio físico "{aula.nombre}" actualizado con éxito.', 'success')
+        return redirect(url_for('main.aulas'))
+
+    return render_template('aula_form.html', aula=aula)
 
 
 @main_bp.route('/bloqueos_externos')
@@ -1178,16 +1390,19 @@ def auditoria():
         ('eliminar_profesor', 'Eliminar Profesor'),
         ('crear_materia', 'Crear Materia'),
         ('editar_materia', 'Editar Materia'),
+        ('eliminar_materia', 'Eliminar Materia'),
         ('crear_bloque', 'Crear Bloque'),
         ('editar_bloque', 'Editar Bloque'),
         ('eliminar_bloque', 'Eliminar Bloque'),
         ('crear_usuario', 'Crear Usuario'),
         ('editar_usuario', 'Editar Usuario'),
+        ('crear_aula', 'Crear Aula / Espacio'),
+        ('editar_aula', 'Editar Aula / Espacio'),
         ('congelar_sistema', 'Congelar Sistema'),
         ('descongelar_sistema', 'Descongelar Sistema'),
     ]
     
-    entidades_disponibles = ['profesor', 'materia', 'bloque', 'usuario', None]
+    entidades_disponibles = ['profesor', 'materia', 'bloque', 'usuario', 'aula', None]
     
     return render_template('auditoria.html',
                            registros=registros,

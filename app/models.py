@@ -272,7 +272,7 @@ class Auditoria(db.Model):
     usuario_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     usuario = db.relationship('User', backref='auditoria_logs')
     
-    accion = db.Column(db.String(50), nullable=False)  # ej: 'crear_bloque', 'editar_bloque', 'eliminar_bloque', 'crear_materia', 'editar_materia', 'crear_profesor', 'editar_profesor', 'eliminar_profesor', 'crear_usuario', 'editar_usuario', 'congelar_sistema', 'descongelar_sistema'
+    accion = db.Column(db.String(50), nullable=False)  # ej: 'crear_bloque', 'editar_bloque', 'eliminar_bloque', 'crear_materia', 'editar_materia', 'eliminar_materia', 'crear_profesor', 'editar_profesor', 'eliminar_profesor', 'crear_usuario', 'editar_usuario', 'congelar_sistema', 'descongelar_sistema'
     
     entidad_tipo = db.Column(db.String(30), nullable=True)  # 'bloque', 'materia', 'profesor', 'usuario', ' sistema'
     entidad_id = db.Column(db.Integer, nullable=True)

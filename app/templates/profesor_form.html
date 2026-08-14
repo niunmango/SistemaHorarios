@@ -40,9 +40,16 @@
 
             <div class="flex items-center justify-between pt-4 border-t border-slate-700">
                 <a href="{{ url_for('main.profesores') }}" class="px-4 py-2.5 text-slate-400 hover:text-white text-sm font-semibold">Cancelar</a>
-                <button type="submit" class="px-6 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-semibold text-sm rounded-xl shadow-lg transition-all">
-                    Guardar Docente
-                </button>
+                <div class="flex items-center gap-3">
+                    {% if profesor and current_user.is_admin %}
+                    <button type="button" onclick="abrirModalEliminarProfesor({{ profesor.id }}, {{ profesor.nombre_completo|tojson }}, {{ profesor.asignaturas_pad|length }}, {{ profesor.asignaturas_ayp|length }})" class="px-4 py-2.5 bg-rose-500/10 hover:bg-rose-600 text-rose-400 hover:text-white font-semibold text-sm rounded-xl border border-rose-500/30 transition-all flex items-center gap-1.5">
+                        <i class="fa-solid fa-trash-can"></i> Dar de Baja
+                    </button>
+                    {% endif %}
+                    <button type="submit" class="px-6 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-semibold text-sm rounded-xl shadow-lg transition-all">
+                        Guardar Docente
+                    </button>
+                </div>
             </div>
 
         </form>
@@ -50,4 +57,89 @@
     </div>
 
 </div>
+
+{% if profesor and current_user.is_admin %}
+<!-- Modal Confirmación Fuerte para Dar de Baja Profesor -->
+<div id="modalEliminarProfesor" class="fixed inset-0 z-50 hidden bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-rose-500/40 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-5">
+        <div class="flex items-start gap-4">
+            <div class="p-3 bg-rose-500/10 border border-rose-500/30 rounded-xl text-rose-400 text-xl shrink-0">
+                <i class="fa-solid fa-user-xmark"></i>
+            </div>
+            <div class="space-y-1">
+                <h3 class="text-lg font-bold text-white">¿Dar de baja a este docente?</h3>
+                <p class="text-xs text-slate-300">
+                    Esta acción es <strong class="text-rose-400">permanente</strong>. El profesor/a será desvinculado de sus cátedras asignadas (<span id="prof_pad_count" class="font-bold text-indigo-300"></span> como PAD, <span id="prof_ayp_count" class="font-bold text-emerald-300"></span> como AYP) y de los horarios y usuarios vinculados.
+                </p>
+            </div>
+        </div>
+
+        <div class="bg-slate-950/60 p-3.5 rounded-xl border border-slate-800 space-y-2">
+            <p class="text-xs text-slate-400">
+                Para confirmar, escribe exactamente el nombre del profesor/a:
+            </p>
+            <div class="text-xs font-mono font-bold text-rose-300 bg-slate-900 px-2.5 py-1.5 rounded-lg border border-slate-700 select-all break-words" id="profesor_nombre_target"></div>
+        </div>
+
+        <form id="formEliminarProfesor" method="POST" action="{{ url_for('main.eliminar_profesor', id=profesor.id) }}" class="space-y-4">
+            <div>
+                <label for="confirm_nombre_profesor" class="block text-xs font-semibold text-slate-300 mb-1">
+                    Confirmar nombre completo exacto:
+                </label>
+                <input type="text" id="confirm_nombre_profesor" name="confirm_nombre" required autocomplete="off"
+                       placeholder="Escribe el nombre aquí..."
+                       class="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-700 rounded-xl text-white text-sm focus:ring-2 focus:ring-rose-500 focus:border-rose-500 focus:outline-none transition-all">
+            </div>
+
+            <div class="flex items-center justify-end gap-3 pt-2">
+                <button type="button" onclick="cerrarModalEliminarProfesor()" class="px-4 py-2 text-xs font-semibold text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 rounded-xl transition-all">
+                    Cancelar
+                </button>
+                <button type="submit" id="btnConfirmarEliminarProfesor" disabled
+                        class="px-4 py-2 text-xs font-bold text-white bg-rose-600 hover:bg-rose-500 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-rose-600 rounded-xl shadow-lg shadow-rose-600/30 flex items-center gap-2 transition-all">
+                    <i class="fa-solid fa-trash-can"></i> Confirmar Baja
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    let targetProfesorNombre = "";
+    function abrirModalEliminarProfesor(id, nombre, padCount, aypCount) {
+        targetProfesorNombre = nombre;
+        document.getElementById('profesor_nombre_target').textContent = nombre;
+        document.getElementById('prof_pad_count').textContent = padCount;
+        document.getElementById('prof_ayp_count').textContent = aypCount;
+        const input = document.getElementById('confirm_nombre_profesor');
+        input.value = '';
+        document.getElementById('btnConfirmarEliminarProfesor').disabled = true;
+        document.getElementById('modalEliminarProfesor').classList.remove('hidden');
+        setTimeout(() => input.focus(), 50);
+    }
+
+    function cerrarModalEliminarProfesor() {
+        const modal = document.getElementById('modalEliminarProfesor');
+        if (modal) modal.classList.add('hidden');
+    }
+
+    const inputProfConfirm = document.getElementById('confirm_nombre_profesor');
+    if (inputProfConfirm) {
+        inputProfConfirm.addEventListener('input', function(e) {
+            const btn = document.getElementById('btnConfirmarEliminarProfesor');
+            if (e.target.value.trim() === targetProfesorNombre.trim()) {
+                btn.disabled = false;
+            } else {
+                btn.disabled = true;
+            }
+        });
+    }
+
+    window.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            cerrarModalEliminarProfesor();
+        }
+    });
+</script>
+{% endif %}
 {% endblock %}
