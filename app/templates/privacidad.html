@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Política de Privacidad{% endblock %}
+{% block title %}Horarios — Política de Privacidad{% endblock %}
 
 {% block content %}
 <div class="max-w-4xl mx-auto py-6 space-y-8">
@@ -8,14 +8,19 @@
     <!-- Header / Banner -->
     <div class="bg-gradient-to-r from-slate-800 to-slate-900 border border-slate-700/80 rounded-2xl p-6 sm:p-8 shadow-xl">
         <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div>
-                <div class="inline-flex items-center gap-2 px-3 py-1 bg-emerald-600/20 text-emerald-400 border border-emerald-500/30 rounded-full text-xs font-semibold uppercase tracking-wider mb-3">
-                    <i class="fa-solid fa-user-shield"></i> Protección de Datos Personales
+            <div class="flex items-start gap-4">
+                <div class="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-white p-1.5 shadow-lg border border-slate-700 shrink-0 hidden sm:flex items-center justify-center">
+                    <img src="{{ url_for('static', filename='logocytCURZA.png') }}" alt="CyT CURZAS Logo" class="w-full h-full object-contain">
                 </div>
-                <h1 class="text-2xl sm:text-3xl font-bold text-white tracking-tight">Política de Privacidad</h1>
-                <p class="text-slate-400 text-sm mt-1">Sistema de Gestión de Horarios y Espacios Físicos — CURZAS / Universidad Nacional del Comahue</p>
+                <div>
+                    <div class="inline-flex items-center gap-2 px-3 py-1 bg-emerald-600/20 text-emerald-400 border border-emerald-500/30 rounded-full text-xs font-semibold uppercase tracking-wider mb-2">
+                        <i class="fa-solid fa-user-shield"></i> Protección de Datos Personales
+                    </div>
+                    <h1 class="text-2xl sm:text-3xl font-bold text-white tracking-tight">Política de Privacidad</h1>
+                    <p class="text-slate-400 text-sm mt-1">Horarios — Sistema de Gestión de Horarios y Espacios Físicos (CURZAS / Universidad Nacional del Comahue)</p>
+                </div>
             </div>
-            <div class="text-left sm:text-right text-xs text-slate-400 bg-slate-900/60 border border-slate-700/60 rounded-xl p-3">
+            <div class="text-left sm:text-right text-xs text-slate-400 bg-slate-900/60 border border-slate-700/60 rounded-xl p-3 shrink-0">
                 <span class="block text-slate-500 font-medium">Última actualización</span>
                 <span class="text-slate-200 font-semibold">Agosto de 2026</span>
             </div>
@@ -32,7 +37,7 @@
                 Responsable del Tratamiento de Datos
             </h2>
             <p>
-                El <strong>Centro Universitario Regional Zona Atlántica (CURZAS)</strong> de la <strong>Universidad Nacional del Comahue (UNComa)</strong>, con domicilio en la ciudad de Viedma, Provincia de Río Negro, República Argentina, es el responsable del tratamiento de los datos personales recabados y procesados a través del <strong>Sistema de Gestión de Horarios y Espacios Físicos</strong> (en adelante, el "Sistema").
+                El <strong>Centro Universitario Regional Zona Atlántica (CURZAS)</strong> de la <strong>Universidad Nacional del Comahue (UNComa)</strong>, con domicilio en la ciudad de Viedma, Provincia de Río Negro, República Argentina, es el responsable del tratamiento de los datos personales recabados y procesados a través de la aplicación <strong>Horarios</strong> (Sistema de Gestión de Horarios y Espacios Físicos, en adelante el "Sistema").
             </p>
             <p>
                 Esta política describe de manera transparente cómo se recopila, utiliza, protege y resguarda la información de los usuarios que interactúan con la plataforma.
@@ -110,7 +115,7 @@
             </h2>
             <div class="bg-blue-950/40 border border-blue-500/30 rounded-xl p-4 sm:p-5 space-y-2">
                 <p class="text-xs sm:text-sm text-blue-200">
-                    El uso y la transferencia a cualquier otra aplicación de la información recibida desde las API de Google por parte del Sistema de Horarios del CURZAS se apegan estrictamente a la <a href="https://developers.google.com/terms/api-services-user-data-policy" target="_blank" rel="noopener noreferrer" class="text-blue-400 underline font-semibold hover:text-blue-300">Política de Datos de Usuario de los Servicios de las API de Google</a>, incluidos los requisitos de <strong>Uso Limitado (Limited Use)</strong>.
+                    El uso y la transferencia a cualquier otra aplicación de la información recibida desde las API de Google por parte de la aplicación <strong>Horarios</strong> del CURZAS se apegan estrictamente a la <a href="https://developers.google.com/terms/api-services-user-data-policy" target="_blank" rel="noopener noreferrer" class="text-blue-400 underline font-semibold hover:text-blue-300">Política de Datos de Usuario de los Servicios de las API de Google</a>, incluidos los requisitos de <strong>Uso Limitado (Limited Use)</strong>.
                 </p>
                 <p class="text-xs sm:text-sm text-slate-300">
                     En particular:

@@ -27,7 +27,7 @@ El **Sistema de Gestión de Horarios y Aulas** es una aplicación web desarrolla
 
 ### 2.2. Autenticación Institucional OAuth 2.0 (`@curza.com.ar`)
 
-El sistema cuenta con integración nativa para **Inicio de Sesión Unificado con Google / OAuth 2.0** utilizando la cuenta institucional (`@curza.com.ar` o `@fi.uncoma.edu.ar`).
+El sistema cuenta con integración nativa para **Inicio de Sesión Unificado con Google / OAuth 2.0** utilizando la cuenta institucional (`@curza.com.ar`).
 
 #### ¿Cómo Habilitar el Botón de OAuth 2.0 en Producción?
 Para que el botón **`Google / UNComa`** aparezca activo en la pantalla de inicio de sesión (`/login`):

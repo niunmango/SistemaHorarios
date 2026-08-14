@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Condiciones del Servicio{% endblock %}
+{% block title %}Horarios — Condiciones del Servicio{% endblock %}
 
 {% block content %}
 <div class="max-w-4xl mx-auto py-6 space-y-8">
@@ -8,14 +8,19 @@
     <!-- Header / Banner -->
     <div class="bg-gradient-to-r from-slate-800 to-slate-900 border border-slate-700/80 rounded-2xl p-6 sm:p-8 shadow-xl">
         <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div>
-                <div class="inline-flex items-center gap-2 px-3 py-1 bg-blue-600/20 text-blue-400 border border-blue-500/30 rounded-full text-xs font-semibold uppercase tracking-wider mb-3">
-                    <i class="fa-solid fa-scale-balanced"></i> Marco Legal Institucional
+            <div class="flex items-start gap-4">
+                <div class="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-white p-1.5 shadow-lg border border-slate-700 shrink-0 hidden sm:flex items-center justify-center">
+                    <img src="{{ url_for('static', filename='logocytCURZA.png') }}" alt="CyT CURZAS Logo" class="w-full h-full object-contain">
                 </div>
-                <h1 class="text-2xl sm:text-3xl font-bold text-white tracking-tight">Condiciones del Servicio</h1>
-                <p class="text-slate-400 text-sm mt-1">Sistema de Gestión de Horarios y Espacios Físicos — CURZAS / Universidad Nacional del Comahue</p>
+                <div>
+                    <div class="inline-flex items-center gap-2 px-3 py-1 bg-blue-600/20 text-blue-400 border border-blue-500/30 rounded-full text-xs font-semibold uppercase tracking-wider mb-2">
+                        <i class="fa-solid fa-scale-balanced"></i> Marco Legal Institucional
+                    </div>
+                    <h1 class="text-2xl sm:text-3xl font-bold text-white tracking-tight">Condiciones del Servicio</h1>
+                    <p class="text-slate-400 text-sm mt-1">Horarios — Sistema de Gestión de Horarios y Espacios Físicos (CURZAS / Universidad Nacional del Comahue)</p>
+                </div>
             </div>
-            <div class="text-left sm:text-right text-xs text-slate-400 bg-slate-900/60 border border-slate-700/60 rounded-xl p-3">
+            <div class="text-left sm:text-right text-xs text-slate-400 bg-slate-900/60 border border-slate-700/60 rounded-xl p-3 shrink-0">
                 <span class="block text-slate-500 font-medium">Última actualización</span>
                 <span class="text-slate-200 font-semibold">Agosto de 2026</span>
             </div>
@@ -32,7 +37,7 @@
                 Aceptación de las Condiciones
             </h2>
             <p>
-                El acceso y utilización del <strong>Sistema de Gestión de Horarios y Espacios Físicos</strong> (en adelante, el "Sistema"), provisto por el <strong>Centro Universitario Regional Zona Atlántica (CURZAS)</strong> de la <strong>Universidad Nacional del Comahue (UNComa)</strong>, implica la aceptación plena, voluntaria y sin reservas de todos y cada uno de los términos establecidos en este documento.
+                El acceso y utilización de la aplicación <strong>Horarios</strong> (Sistema de Gestión de Horarios y Espacios Físicos, en adelante el "Sistema"), provisto por el <strong>Centro Universitario Regional Zona Atlántica (CURZAS)</strong> de la <strong>Universidad Nacional del Comahue (UNComa)</strong>, implica la aceptación plena, voluntaria y sin reservas de todos y cada uno de los términos establecidos en este documento.
             </p>
             <p>
                 Si no está de acuerdo con alguna de las disposiciones aquí descritas, deberá abstenerse de utilizar el Sistema y sus funcionalidades asociadas.
@@ -48,7 +53,7 @@
                 Naturaleza y Propósito del Servicio
             </h2>
             <p>
-                El Sistema es una plataforma institucional diseñada para la optimización, organización, coordinación académica y consulta pública de:
+                La aplicación <strong>Horarios</strong> es una plataforma institucional diseñada para la optimización, organización, coordinación académica y consulta pública de:
             </p>
             <ul class="list-disc list-inside space-y-1.5 pl-2 text-slate-300">
                 <li>Horarios y cronogramas de cursado de carreras del CURZAS (incluyendo TUASSL, TUDW y afines).</li>

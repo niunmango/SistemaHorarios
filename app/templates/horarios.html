@@ -1,19 +1,24 @@
 {% extends "base.html" %}
 
-{% block title %}Grilla Horaria Semanal{% endblock %}
+{% block title %}Horarios — Sistema de Gestión y Consulta de Horarios y Aulas{% endblock %}
 
 {% block content %}
 <div class="space-y-6">
 
-    <!-- Header Section -->
+    <!-- Header Section (Compact, Clean, Top Level) -->
     <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800 pb-4 no-print">
-        <div>
-            <div class="inline-flex items-center space-x-2 px-3 py-1 bg-blue-500/10 border border-blue-500/20 rounded-full text-xs font-semibold text-blue-400 mb-2">
-                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                <span>Consulta Pública y Gestión de Aulas — CURZAS UNComa</span>
+        <div class="flex items-center gap-3.5">
+            <div class="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-white p-1 shadow-md border border-slate-700/80 shrink-0 flex items-center justify-center">
+                <img src="{{ url_for('static', filename='logocytCURZA.png') }}" alt="CyT CURZAS Logo" class="w-full h-full object-contain">
             </div>
-            <h1 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">Grilla Semanal de Horarios (08:00 a 21:00 hs)</h1>
-            <p class="text-slate-400 text-sm mt-1">Horarios oficiales para TUASSL y TUDW. {% if current_user.is_authenticated %}<span class="text-blue-400 font-semibold">💡 Tip: Puedes arrastrar y soltar (Drag & Drop) las clases para reubicarlas directamente en la grilla.</span>{% endif %}</p>
+            <div>
+                <div class="inline-flex items-center space-x-2 px-2.5 py-0.5 bg-blue-500/10 border border-blue-500/20 rounded-full text-[11px] font-semibold text-blue-400 mb-1">
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                    <span>CURZAS — Universidad Nacional del Comahue</span>
+                </div>
+                <h1 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">Horarios — Grilla Semanal de Clases</h1>
+                <p class="text-slate-400 text-xs sm:text-sm mt-0.5">Consulta pública oficial de horarios (08:00 a 21:00 hs) para carreras de grado y pregrado.{% if current_user.is_authenticated %}<span class="text-blue-400 font-semibold ml-1">💡 Tip: Arrastra y suelta las clases para reubicarlas.</span>{% endif %}</p>
+            </div>
         </div>
 
         <div class="flex flex-wrap items-center gap-2">
@@ -26,6 +31,11 @@
             <a href="{{ url_for('main.nuevo_bloque') }}" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs rounded-xl shadow-lg shadow-blue-600/30 flex items-center space-x-2 transition-all">
                 <i class="fa-solid fa-plus"></i>
                 <span>Nueva Clase / Reserva</span>
+            </a>
+            {% elif not current_user.is_authenticated %}
+            <a href="{{ url_for('auth.login_oauth') }}" class="px-3.5 py-2 bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs rounded-xl shadow-lg shadow-blue-600/30 flex items-center space-x-2 transition-all">
+                <i class="fa-brands fa-google"></i>
+                <span>Ingreso Docente / Gestión</span>
             </a>
             {% endif %}
         </div>
@@ -291,6 +301,85 @@
             </tbody>
         </table>
     </div>
+
+    <!-- Aside: Propósito de la Aplicación e Información Institucional (Google OAuth & Transparencia) -->
+    <aside aria-label="Información institucional y propósito de la aplicación" class="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 border border-slate-800 rounded-2xl p-6 sm:p-7 shadow-xl no-print mt-8 space-y-4">
+        <div class="flex flex-col lg:flex-row lg:items-start justify-between gap-6">
+            <div class="space-y-4 max-w-4xl">
+                <!-- Badges & Brand -->
+                <div class="flex flex-wrap items-center gap-2">
+                    <span class="px-3 py-1 bg-blue-600/20 border border-blue-500/30 text-blue-400 text-xs font-bold rounded-full uppercase tracking-wider flex items-center gap-1.5">
+                        <i class="fa-solid fa-graduation-cap"></i> CURZAS — Universidad Nacional del Comahue
+                    </span>
+                    <span class="px-2.5 py-0.5 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[11px] font-semibold rounded-full flex items-center gap-1">
+                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> Sistema Oficial
+                    </span>
+                </div>
+                
+                <!-- Main Title & Subtitle with Official Emblem -->
+                <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-white p-1.5 shadow-xl border border-slate-700/80 shrink-0 flex items-center justify-center">
+                        <img src="{{ url_for('static', filename='logocytCURZA.png') }}" alt="CyT CURZAS Logo" class="w-full h-full object-contain">
+                    </div>
+                    <div>
+                        <h2 class="text-xl sm:text-2xl lg:text-3xl font-extrabold text-white tracking-tight">
+                            Horarios
+                        </h2>
+                        <p class="text-xs sm:text-sm text-blue-300 font-medium mt-0.5">
+                            Sistema Institucional de Gestión Académica, Asignación de Aulas y Consulta Pública de Horarios
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Propósito de la Aplicación y Funcionalidades -->
+                <div class="space-y-3 text-xs sm:text-sm text-slate-300 leading-relaxed bg-slate-950/40 p-4 sm:p-5 rounded-xl border border-slate-800">
+                    <p>
+                        <strong class="text-white">Propósito de la aplicación:</strong> <strong>Horarios</strong> es la plataforma web institucional oficial del <em>Centro Universitario Regional Zona Atlántica (CURZAS)</em> de la <em>Universidad Nacional del Comahue (UNComa)</em>. Su finalidad es centralizar la organización académica, coordinar la reserva y ocupación eficiente de aulas y espacios físicos, y proveer un medio transparente para la consulta pública de los cronogramas semanales de cursado para todas las carreras universitarias (TUASSL, TUDW y afines).
+                    </p>
+
+                    <!-- Cuadrícula de Funcionalidades y Acceso -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
+                        <div class="flex items-start gap-2.5 bg-slate-900/60 p-3 rounded-lg border border-slate-800/80">
+                            <i class="fa-solid fa-calendar-days text-blue-400 mt-1 text-sm shrink-0"></i>
+                            <div>
+                                <strong class="text-white block text-xs font-semibold">Consulta Pública y Libre (Sin Registro)</strong>
+                                <span class="text-[11px] sm:text-xs text-slate-400">Estudiantes y público general acceden abiertamente a la grilla semanal completa (08:00 a 21:00 hs), filtros por carrera/año/cuatrimestre, estado de aulas y exportación/impresión en PDF sin necesidad de registrarse ni iniciar sesión.</span>
+                            </div>
+                        </div>
+                        <div class="flex items-start gap-2.5 bg-slate-900/60 p-3 rounded-lg border border-slate-800/80">
+                            <i class="fa-solid fa-door-open text-emerald-400 mt-1 text-sm shrink-0"></i>
+                            <div>
+                                <strong class="text-white block text-xs font-semibold">Gestión de Cátedras y Aulas (Docentes y Bedelía)</strong>
+                                <span class="text-[11px] sm:text-xs text-slate-400">Docentes y personal de gestión administran comisiones, resuelven solapamientos horarios, solicitan adecuaciones de cronogramas y gestionan reservas áulicas.</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Transparencia y Uso de Datos Google OAuth 2.0 -->
+                    <div class="bg-blue-950/30 border border-blue-500/20 rounded-lg p-3 sm:p-3.5 space-y-1.5">
+                        <div class="flex items-center gap-2 text-xs font-bold text-blue-300">
+                            <i class="fa-solid fa-user-shield text-blue-400"></i>
+                            <span>Transparencia y Uso de Datos de Usuario (Google OAuth 2.0)</span>
+                        </div>
+                        <p class="text-[11px] sm:text-xs text-slate-300">
+                            Al iniciar sesión mediante Google OAuth 2.0, la aplicación solicita exclusivamente los permisos básicos de identidad (<code class="bg-slate-900 px-1 py-0.5 rounded text-blue-300 font-mono text-[10px]">openid</code>, <code class="bg-slate-900 px-1 py-0.5 rounded text-blue-300 font-mono text-[10px]">email</code>, <code class="bg-slate-900 px-1 py-0.5 rounded text-blue-300 font-mono text-[10px]">profile</code>) con el único fin de verificar la identidad institucional del usuario, asignarle sus cátedras y registrar la auditoría de cambios.
+                        </p>
+                        <p class="text-[11px] sm:text-xs text-slate-400">
+                            <i class="fa-solid fa-check text-emerald-400 mr-1"></i> No se accede a correos de Gmail, contactos ni archivos personales. Los datos nunca se transfieren ni comercializan a terceros.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Enlaces Legales Rápidos -->
+                <div class="flex flex-wrap items-center gap-3 pt-1 text-xs text-slate-400">
+                    <span class="text-slate-500 font-medium">Enlaces institucionales:</span>
+                    <a href="{{ url_for('main.privacidad') }}" class="text-blue-400 hover:text-blue-300 underline font-medium transition-colors">Política de Privacidad</a>
+                    <span class="text-slate-600">•</span>
+                    <a href="{{ url_for('main.terminos') }}" class="text-blue-400 hover:text-blue-300 underline font-medium transition-colors">Condiciones del Servicio</a>
+                </div>
+            </div>
+        </div>
+    </aside>
 
     <!-- Undo Status Message Area -->
     <div id="undo-mensaje" class="hidden fixed bottom-4 right-4 bg-slate-800 border-l-4 border-emerald-400 text-white p-4 rounded-lg shadow-2xl max-w-sm z-50">

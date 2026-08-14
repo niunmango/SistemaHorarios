@@ -58,6 +58,25 @@ class TestLegalPages(unittest.TestCase):
         self.assertIn('/terminos', content)
         self.assertIn('/privacidad', content)
 
+    def test_pagina_principal_nombre_y_proposito(self):
+        response = self.client.get('/horarios')
+        self.assertEqual(response.status_code, 200)
+        content = response.data.decode('utf-8')
+        self.assertIn('Horarios', content)
+        self.assertIn('Propósito de la aplicación', content)
+        self.assertIn('CURZAS', content)
+        self.assertIn('Universidad Nacional del Comahue', content)
+        self.assertIn('Google OAuth 2.0', content)
+        self.assertIn('Consulta Pública', content)
+
+    def test_login_page_nombre_y_proposito(self):
+        response = self.client.get('/login')
+        self.assertEqual(response.status_code, 200)
+        content = response.data.decode('utf-8')
+        self.assertIn('Horarios', content)
+        self.assertIn('Google', content)
+
 
 if __name__ == '__main__':
     unittest.main()
+
